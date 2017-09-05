@@ -2,10 +2,11 @@ from bottle import route, get, run, post, request, redirect, static_file
 from Crypto.Hash import MD5
 import re
 import numpy as np
-
+import string
 #-----------------------------------------------------------------------------
 # This class loads html files from the "template" directory and formats them using Python.
 # If you are unsure how this is working, just
+Users = [] #array of users
 class FrameEngine:
     def __init__(this,
         template_path="templates/",
@@ -57,6 +58,58 @@ def serve_css(css):
 @route('/js/<js>')
 def serve_js(js):
     return static_file(js, root='js/')
+
+#-----------------------------------------------------------------------------
+#RESGISter 
+#loads up register page
+@get('/register')
+def register():
+    return fEngine.load_and_render('register')
+
+
+
+#attempt register
+@post('/register')
+def do_register():
+    username = request.forms.get('username')
+    password = request.forms.get('password')
+    return check_do_register(username, password)
+
+#-----------------
+#Check the registering process
+#Username and password validity
+def check_do_register(username, password):
+    password = str(password)
+    username = str(username)
+    if (len(password) > 8 and username != password and username not in Users):
+        
+        #create bools corresponding to password requirements
+        
+        specialchar = False
+        capitals = False
+        numbers = False
+        
+        #create sets of strings that are used to check for password validity
+        
+        chars = set(string.ascii_uppercase)
+        number = set(string.hexdigits)
+        punc = set(string.punctuation)
+        
+        #check password validity 
+        
+        if any((c in chars) for c in password): 
+            capitals = True
+        if any((c in punc) for c in password):
+            specialchar = True
+        if any((c in number)for c in password):
+            numbers = True
+        if (numbers == True and specialchar == True and capitals == True):
+            
+            #append username to end of list of usernames
+            Users.append(username)
+            return fEngine.load_and_render("RTAlogin", username=username)
+            
+    return fEngine.load_and_render("invalid", reason="Invalid password or username")
 
 #-----------------------------------------------------------------------------
 
