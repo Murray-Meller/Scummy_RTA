@@ -5,11 +5,11 @@ import numpy as np
 
 #-----------------------------------------------------------------------------
 # This class loads html files from the "template" directory and formats them using Python.
-# If you are unsure how this is working, just 
+# If you are unsure how this is working, just
 class FrameEngine:
-    def __init__(this, 
-        template_path="templates/", 
-        template_extension=".html", 
+    def __init__(this,
+        template_path="templates/",
+        template_extension=".html",
         **kwargs):
         this.template_path = template_path
         this.template_extension = template_extension
@@ -62,11 +62,11 @@ def serve_js(js):
 
 # Check the login credentials
 def check_login(username, password):
-    login = False
+    login = False ## TODO: NEED TO CHANGE THIS!!!!!!!!!!!!!!!!!!!!!!! JUST USING IT FOR TESTING
     if username != "admin": # Wrong Username
         err_str = "Incorrect Username"
         return err_str, login
-    
+
     if password != "password":
         err_str = "Incorrect Password"
         return err_str, login
@@ -74,7 +74,7 @@ def check_login(username, password):
     login_string = "Logged in!"
     login = True
     return login_string, login
-    
+
 #-----------------------------------------------------------------------------
 # Redirect to login
 @route('/')
@@ -85,22 +85,53 @@ def index():
 # Display the login page
 @get('/login')
 def login():
-    return fEngine.load_and_render("login")
+    return fEngine.load_and_render("pre_login")
 
-# Attempt the login
-@post('/login')
+# Display the users login page
+@get('/user_login')
+def login():
+    return fEngine.load_and_render("user_login")
+
+# Display the employees login page
+@get('/employee_login')
+def login():
+    return fEngine.load_and_render("employee_login")
+
+# Attempt the user login
+@post('/user_login')
 def do_login():
     username = request.forms.get('username')
     password = request.forms.get('password')
     err_str, login = check_login(username, password)
-    if login: 
-        return fEngine.load_and_render("valid", flag=err_str)
+    if login:
+        #return fEngine.load_and_render("valid page", flag=err_str)
+        #TODO: NEED TO MAKE THIS Work for vaild and fail - also, need to make sure it works between the user and emplyoee pages
+        return fEngine.load_and_render("user_profile")
     else:
-        return fEngine.load_and_render("invalid", reason=err_str)
+        # return fEngine.load_and_render("invalid page", reason=err_str)
+        return fEngine.load_and_render("user_profile")
+
+# Attempt the employee login
+@post('/employee_login')
+def do_login():
+    username = request.forms.get('username')
+    password = request.forms.get('password')
+    authenication = request.forms.get('authenication')
+
+    #TODO: make an employee check login and use it here
+    #TODO: it will probably need to load different pages based what kinda of staff member they are
+    err_str, login = check_login(username, password)
+    if login:
+        #return fEngine.load_and_render("user_profile", flag=err_str)
+        #TODO: NEED TO MAKE THIS Work for vaild and fail - also, need to make sure it works between the user and emplyoee pages
+        return fEngine.load_and_render("")
+    else:
+        # return fEngine.load_and_render("user_profile", reason=err_str)
+        return fEngine.load_and_render("")
 
 @get('/about')
 def about():
-    garble = ["leverage agile frameworks to provide a robust synopsis for high level overviews.", 
+    garble = ["leverage agile frameworks to provide a robust synopsis for high level overviews.",
     "iterate approaches to corporate strategy and foster collaborative thinking to further the overall value proposition.",
     "organically grow the holistic world view of disruptive innovation via workplace diversity and empowerment.",
     "bring to the table win-win survival strategies to ensure proactive domination.",
