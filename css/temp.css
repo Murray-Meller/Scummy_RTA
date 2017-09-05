@@ -43,25 +43,7 @@ html, body, {
     left:0;
     right:0;
 }
+p.edit {
+    font-size: 1000px;
 
-
-
-/* For the pre login screen */
-#pre_login_container {
-    width: 100%;
-    height: 200px;
-    margin: 0px;
 }
-
-#user_login_box {
-    height: 150px;
-    width: 29%;
-    padding: 25px 10%;
-    display: inline-block;
-}
-
-#employee_login_box {
-    height: 150px;
-    width: 30%;
-    padding: 25px 10%;
-    display: inline-block;
