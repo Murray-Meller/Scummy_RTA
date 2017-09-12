@@ -147,7 +147,29 @@ def do_vehicle_registration():
     vehicle_registration_number = request.forms.get('number')
     return check_register_vehicle(vehicle_registration_number)
 
+#------------------------------------------------------------
+#Manage vehicle page
+@get('/manage_vehicle')
+def manage_vehicle():
+    return fEngine.load_and_render('manage_vehicle')
 
+@post('/manage_vehicle')
+def compute_vehicle():
+
+#compute vehicle number ------------------
+    vehicle_number = request.forms.get('number')
+#compute pay fine amount if paying fines is submitted ------------------
+    if vehicle_number == None:
+        return deduct_fines()
+    return check_register_vehicle(vehicle_number)
+
+#deduct fines
+def deduct_fines():
+    #TODO must update the total amount of fines to be payed to zero
+    return fEngine.load_and_render('/user_profile')
+
+
+#
 #---------------------------register-------------------------------------
 #loads up register page
 @get('/register')
