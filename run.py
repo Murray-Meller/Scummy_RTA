@@ -3,11 +3,79 @@ from Crypto.Hash import MD5
 import re
 import numpy as np
 import string
+
+#----------------------------DATABASE-STUFF-------------------------------------
+users = [] #array of users
+database = './database/users.txt'
+
+# Updates the 'Users' array to store all the contents of the file
+def load_users():
+    user_database = open(database, 'w+')
+
+    for line in user_database:
+        line = line.split(',')
+        line[-1] = line[-1][:-1]
+        users.append(line)
+    user_database.close()
+    return users
+
+# Only use in when to save the whole 'Users' array to the csv file
+def save_users():
+    user_database = open(database, 'w')
+    user_database.truncate()
+
+    for user in users:
+        for word in user:
+            if word != user[-1]:
+                user_database.write(',')
+            user_database.write(str(word))
+        user_database.write('\n')
+
+    user_database.close()
+
+def login_user(username, password):
+    for user in users:
+        if user[0] == username and user[1] == password:
+            return True
+    return False
+
+def login_employee(username, password, key):
+    global users
+    for user in users:
+        if user[0] == username and user[1] == password:
+            if user[2] == key:
+                return True
+    return False
+
+def register_user(username, password):
+
+    file = open(database, 'a')
+    username += ','
+    file.write(username)
+    file.write(password)
+    file.write('\n')
+    read_doc()
+
+def register_employee(username, password, key):
+    file = open(database, 'a')
+    username += ','
+    file.write(username)
+    password += ','
+    file.write(password)
+    file.write(key)
+    file.write('\n')
+    read_doc()
+
+#-----------------------------------------------------------------------------
+
+
+
 #-----------------------------------------------------------------------------
 # This class loads html files from the "template" directory and formats them using Python.
 # If you are unsure how this is working, just
-Users = [] #array of users
-database = 'test.txt'
+
+
+
 class FrameEngine:
     def __init__(this,
         template_path="templates/",
@@ -16,6 +84,7 @@ class FrameEngine:
         this.template_path = template_path
         this.template_extension = template_extension
         this.global_renders = kwargs
+        load_users()
 
     def load_template(this, filename):
         path = this.template_path + filename + this.template_extension
@@ -43,66 +112,9 @@ class FrameEngine:
         rendered_template = rendered_template + this.load_template(tailer)
         return rendered_template
 
-    # Updates the 'Users' array to store all the contents of the file
-    def load_users():
-        file = open(database, 'r')
-        global Users
-        Users = []
-        for line in file:
-            line = line.split(',')
-            line[-1] = line[-1][:-1]
-            Users.append(line)
-        return Users
 
-    # Only use in when to save the whole 'Users' array to the csv file
-    def save_users():
-        global Users
-        file = open(database, 'w')
-        file.truncate()
 
-        for user in Users:
-            for word in user:
-                if word != user[-1]:
-                    word += ','
-                file.write(word)
-            file.write('\n')
 
-        file.close()
-
-    def login_user(username, password):
-        global Users
-        for user in Users:
-            if user[0] == username and user[1] == password:
-                return True
-        return False
-
-    def login_employee(username, password, key):
-        global Users
-        for user in Users:
-            if user[0] == username and user[1] == password:
-                if user[2] == key:
-                    return True
-        return False
-
-    def register_user(username, password):
-        file = open(database, 'a')
-        username += ','
-        file.write(username)
-        file.write(password)
-        file.write('\n')
-        read_doc()
-
-    def register_employee(username, password, key):
-        file = open(database, 'a')
-        username += ','
-        file.write(username)
-        password += ','
-        file.write(password)
-        file.write(key)
-        file.write('\n')
-        read_doc()
-        
-#-----------------------------------------------------------------------------
 
 # Allow image loading
 @route('/img/<picture>')
@@ -136,14 +148,13 @@ def do_vehicle_registration():
     return check_register_vehicle(vehicle_registration_number)
 
 
-#----------------------------------------------------------------
-#RESGISter
+#---------------------------register-------------------------------------
 #loads up register page
 @get('/register')
 def register():
     return fEngine.load_and_render('pre_register')
 
-# Display the users register
+# Display the users register page
 @get('/user_register')
 def register():
     return fEngine.load_and_render("user_register")
@@ -158,7 +169,14 @@ def register():
 def do_register():
     username = request.forms.get('username')
     password = request.forms.get('password')
-    return check_do_register(username, password)
+
+    if (check_vaild_username_password(username, password)):
+        users.append([len(users),username,password,"User","",""])
+        save_users()
+        return fEngine.load_and_render("RTAlogin", username=username)
+
+    return fEngine.load_and_render("invalid", reason="Your username and password did not follow our guidlines. Please try again.")
+
 
 #attempt register employee
 @post('/employee_register')
@@ -171,25 +189,28 @@ def do_register():
 #-----------------
 #Check the registering process
 #Username and password validity
-def check_do_register(username, password):
-    password = str(password)
+def check_vaild_username_password(username, password):
     username = str(username)
-    if (len(password) > 8 and username != password and username not in Users):
+    password = str(password)
 
+    #Check username avaiability
+    for u in users:
+        if (u[1] == username):
+            return fEngine.load_and_render("invalid", reason="Please try another username.")
+
+    #check password
+    if (len(password) > 8 and username != password):
         #create bools corresponding to password requirements
-
         specialchar = False
         capitals = False
         numbers = False
 
         #create sets of strings that are used to check for password validity
-
         chars = set(string.ascii_uppercase)
         number = set(string.hexdigits)
         punc = set(string.punctuation)
 
         #check password validity
-
         if any((c in chars) for c in password):
             capitals = True
         if any((c in punc) for c in password):
@@ -197,12 +218,8 @@ def check_do_register(username, password):
         if any((c in number)for c in password):
             numbers = True
         if (numbers == True and specialchar == True and capitals == True):
-
-            #append username to end of list of usernames
-            Users.append(username)
-            return fEngine.load_and_render("RTAlogin", username=username)
-
-    return fEngine.load_and_render("invalid", reason="Invalid password or username")
+            return True
+        return False
 
 #registeration checker for the employee
 def check_do_register_employee(username, password, key):
@@ -210,7 +227,7 @@ def check_do_register_employee(username, password, key):
     username = str(username)
     #----------
     #TODO need to make sure that the key is processed
-    if (len(password) > 8 and username != password and username not in Users):
+    if (len(password) > 8 and username != password and username not in users):
 
         # create bools correspondisng to password requirements
 
@@ -234,7 +251,7 @@ def check_do_register_employee(username, password, key):
             numbers = True
         if (numbers == True and specialchar == True and capitals == True):
             # append username to end of list of usernames
-            Users.append(username)
+            users.append(username)
             return fEngine.load_and_render("RTAlogin", username=username)
 
     return fEngine.load_and_render("invalid", reason="Invalid password or username")
