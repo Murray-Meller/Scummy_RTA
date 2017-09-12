@@ -3,7 +3,6 @@ from Crypto.Hash import MD5
 import re
 import numpy as np
 import string
-
 #----------------------------DATABASE-STUFF-------------------------------------
 users = [] #array of users
 database = './database/users.txt'
@@ -147,7 +146,7 @@ def do_vehicle_registration():
     vehicle_registration_number = request.forms.get('number')
     return check_register_vehicle(vehicle_registration_number)
 
-#------------------------------------------------------------
+#----------------------------------Manage vehicle--------------------------
 #Manage vehicle page
 @get('/manage_vehicle')
 def manage_vehicle():
@@ -156,20 +155,48 @@ def manage_vehicle():
 @post('/manage_vehicle')
 def compute_vehicle():
 
-#compute vehicle number ------------------
+#compute vehicle number ----------
     vehicle_number = request.forms.get('number')
 #compute pay fine amount if paying fines is submitted ------------------
     if vehicle_number == None:
         return deduct_fines()
     return check_register_vehicle(vehicle_number)
 
-#deduct fines
+#deduct fines--------
 def deduct_fines():
     #TODO must update the total amount of fines to be payed to zero
     return fEngine.load_and_render('/user_profile')
 
 
-#
+#----------------apply for license and user merit points
+@get('/apply_license')
+def manage_license():
+    return fEngine.load_and_render('apply_license')
+
+@post('/apply_license')
+def compute_license():
+
+    #compute whether they want to apply or renew
+    #if applying will return Applying if renewing will return Renewing.
+    application = request.forms.get('param', '')
+    aplitcation = str(application)
+    print(application)
+    file = open(database, 'r')
+    #TODO this is a basic check for if user is already applied etc...what needs to be done is correctly correlate this to the right user.
+    if (application == "Applying" and ("Unlicensed" not in file)):
+        file.close()
+        return fEngine.load_and_render("invalid", reason="You already have a license or are applying for one.")
+    elif (application == "Renewing" and ("Licensed" not in file)):
+        file.close()
+        return fEngine.load_and_render('invalid', reason="You are unlicensed or are applying for a license")
+    elif (application == "Applying"):
+        #TODO add to database
+        return fEngine.load_and_render('user_profile')
+    elif (application == "Renewing"):
+        return fEngine.load_and_render('user_profile')
+    #TODO sends this data to the database, if licensed is renewed will not update or if already has license cannot apply.
+    return fEngine.load_and_render('user_profile')
+
 #---------------------------register-------------------------------------
 #loads up register page
 @get('/register')
@@ -195,7 +222,7 @@ def do_register():
     if (check_vaild_username_password(username, password)):
         users.append([len(users),username,password,"User","",""])
         save_users()
-        return fEngine.load_and_render("RTAlogin", username=username)
+        return fEngine.load_and_render("user_profile", username=username)
 
     return fEngine.load_and_render("invalid", reason="Your username and password did not follow our guidlines. Please try again.")
 
