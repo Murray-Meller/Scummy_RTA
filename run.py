@@ -65,8 +65,12 @@ def register_employee(username, password, key):
     file.write('\n')
     read_doc()
 
-#-----------------------------------------------------------------------------
-
+#--------------------------------------HASHING---------------------------------------
+def hash_function(password):
+    encodedPassword = password.encode()  # encodes the char to allow for hashing
+    hash = MD5.new(encodedPassword)  # creates new MD5 hash reference
+    hashedHex = hash.hexdigest()  # digests the MD5 reference into a hash.
+    return hashedHex
 
 
 #-----------------------------------------------------------------------------
@@ -218,8 +222,8 @@ def register():
 def do_register():
     username = request.forms.get('username')
     password = request.forms.get('password')
-
     if (check_vaild_username_password(username, password)):
+        password = hash_function(password)
         users.append([len(users),username,password,"User","",""])
         save_users()
         return fEngine.load_and_render("user_profile", username=username)
@@ -232,7 +236,7 @@ def do_register():
 def do_register():
     username = request.forms.get('username')
     password = request.forms.get('password')
-    key = request.forms.get('key')
+    password = hash_function(password)
     return check_do_register_employee(username, password, key)
 
 #-----------------
@@ -301,6 +305,7 @@ def check_do_register_employee(username, password, key):
         if (numbers == True and specialchar == True and capitals == True):
             # append username to end of list of usernames
             users.append(username)
+            password = hash_function(password)
             return fEngine.load_and_render("RTAlogin", username=username)
 
     return fEngine.load_and_render("invalid", reason="Invalid password or username")
@@ -311,11 +316,12 @@ def check_do_register_employee(username, password, key):
 # Check the login credentials
 def check_login(username, password):
     login = False ## TODO: NEED TO CHANGE THIS!!!!!!!!!!!!!!!!!!!!!!! JUST USING IT FOR TESTING
+    password = hash_function(password)
     if username != "admin": # Wrong Username
         err_str = "Incorrect Username"
         return err_str, login
 
-    if password != "password":
+    if password != "TODO compare to hash":
         err_str = "Incorrect Password"
         return err_str, login
 
