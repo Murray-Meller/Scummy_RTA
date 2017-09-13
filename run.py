@@ -244,7 +244,7 @@ def check_vaild_username_password(username, password):
 
     #Check username avaiability
     for u in users:
-        if (u[1] == username):
+        if (u[0] == username):
             return fEngine.load_and_render("invalid", reason="Please try another username.")
 
     #check password
