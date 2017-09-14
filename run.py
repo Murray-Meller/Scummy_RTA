@@ -5,114 +5,64 @@ import numpy as np
 import string
 #----------------------------DATABASE-STUFF-------------------------------------
 users = [] #array of users
-vehicles = [] #array of vehicles
-destroyed_vehicles = [] #array of destoryed_vehicles
-
-user_database = './database/users.txt'
-vehicle_database = './database/vehicles.txt'
-destroyed_vehicle_database = './database/destroyed_vehicles.txt'
-
-user_database_num_fields = 6
-vehicle_database_num_fields = 4
-destroyed_vehicle_database_num_fields = 1
+database = './database/users.txt'
 
 # Updates the 'Users' array to store all the contents of the file
-# DONE: Muzz and Euan
 def load_users():
-    udb = open(user_database, 'r+')
-    for line in udb:
+    user_database = open(database, 'w+')
+
+    for line in user_database:
         line = line.split(',')
         line[-1] = line[-1][:-1]
         users.append(line)
-    udb.close()
-    users.pop(0)
+    user_database.close()
     return users
 
 # Only use in when to save the whole 'Users' array to the csv file
-# DONE: Muzz and Euan
 def save_users():
-    udb = open(user_database, 'w')
+    user_database = open(database, 'w+')
+    user_database.truncate()
+
     for user in users:
-        count = 0
-        for field in user:
-            udb.write(str(field))
-            count += 1
-            if count != user_database_num_fields:
-                udb.write(',')
-        for i in range(user_database_num_fields - (count + 1)):
-            udb.write(',')
-        udb.write('\n')
-    udb.close()
+        for word in user:
+            if word != user[-1]:
+                user_database.write(',')
+            user_database.write(str(word))
+        user_database.write('\n')
 
-# loads in the vehicles file into a global array called vehicles,
-# see vehciles.txt file for column details
-# Muzz
-def load_vehicles():
-    vdb = open(vehicle_database, 'r+')
-    for line in vdb:
-        line = line.split(',')
-        line[-1] = line[-1][:-1]
-        vehicles.append(line)
-    vdb.close()
-    vehicles.pop(0)
-    return vehicles
+    user_database.close()
 
-# saves the global array vehicles to the file
-# should be called whenever you change a value in the array. (lame i know, but it works)
-# Muzz
-def save_vehicles():
-    vdb = open(vehicle_database, 'w')
-    for vehicle in vehicles:
-        count = 0
-        for field in vehicle:
-            vdb.write(str(field))
-            count += 1
-            if count != vehicle_database_num_fields:
-                vdb.write(',')
-        for i in range(vehicle_database_num_fields - (count + 1)):
-            vdb.write(',')
-        vdb.write('\n')
-    vdb.close()
+def login_user(username, password):
+    for user in users:
+        if user[0] == username and user[1] == password:
+            return True
+    return False
+def login_employee(username, password, key):
+    global users
+    for user in users:
+        if user[0] == username and user[1] == password:
+            if user[2] == key:
+                return True
+    return False
 
-# loads in the destroyed_vehicles file into a global array called destroyed_vehicles,
-# see destroyed_vehciles.txt file for column details
-# Muzz
-def load_destroyed_vehicles():
-    dvdb = open(destroyed_vehicle_database, 'r+')
-    for line in dvdb:
-        line = line.split(',')
-        line[-1] = line[-1][:-1]
-        destroyed_vehicles.append(line)
-    dvdb.close()
-    destroyed_vehicles.pop(0)
-    return destroyed_vehicles
+def register_user(username, password):
 
-# saves the global array destroyed_vehicles to the file
-# should be called whenever you change a value in the array. (lame i know, but it works)
-# Muzz
-def save_destroyed_vehicles():
-    dvdb = open(destroyed_vehicle_database, 'w')
-    for vehicle in destroyed_vehicles:
-        count = 0
-        for field in vehicle:
-            dvdb.write(str(field))
-            count += 1
-            if count != destroyed_vehicle_database_num_fields:
-                dvdb.write(',')
-        for i in range(destroyed_vehicle_database_num_fields - (count + 1)):
-            dvdb.write(',')
-        dvdb.write('\n')
-    dvdb.close()
+    file = open(database, 'a')
+    username += ','
+    file.write(username)
+    file.write(password)
+    file.write('\n')
+    read_doc()
 
-def load_database():
-    load_users()
-    load_vehicles()
-    load_destroyed_vehicles()
-
-def save_database():
-    save_users()
-    save_vehicles()
-    save_destroyed_vehicles()
+def register_employee(username, password, key):
+    file = open(database, 'a')
+    username += ','
+    file.write(username)
+    password += ','
+    file.write(password)
+    file.write(key)
+    file.write('\n')
+    read_doc()
 
 #--------------------------------------HASHING---------------------------------------
 def hash_function(password):
@@ -121,9 +71,13 @@ def hash_function(password):
     hashedHex = hash.hexdigest()  # digests the MD5 reference into a hash.
     return hashedHex
 
-#--------------------------------WEBSERVER OBJECT---------------------------------------------
+
+#-----------------------------------------------------------------------------
 # This class loads html files from the "template" directory and formats them using Python.
 # If you are unsure how this is working, just
+
+
+
 class FrameEngine:
     def __init__(this,
         template_path="templates/",
@@ -132,11 +86,7 @@ class FrameEngine:
         this.template_path = template_path
         this.template_extension = template_extension
         this.global_renders = kwargs
-        load_database()
-        print("Users: " + str(users))
-        print("Vehicles " + str(vehicles))
-        print("Destroyed Vehicles " + str(destroyed_vehicles))
-        save_database()
+        load_users()
 
     def load_template(this, filename):
         path = this.template_path + filename + this.template_extension
@@ -164,6 +114,10 @@ class FrameEngine:
         rendered_template = rendered_template + this.load_template(tailer)
         return rendered_template
 
+
+
+
+
 # Allow image loading
 @route('/img/<picture>')
 def serve_pictures(picture):
@@ -179,7 +133,7 @@ def serve_css(css):
 def serve_js(js):
     return static_file(js, root='js/')
 
-#--------------------------- USER REGISTER VEHICLE------------------------------
+#-----------------------------------------------------------------------------
 #user login register a vehicle page
 @get('/register_vehicle')
 def vehicle_register():
@@ -195,7 +149,7 @@ def do_vehicle_registration():
     vehicle_registration_number = request.forms.get('number')
     return check_register_vehicle(vehicle_registration_number)
 
-#----------------------------------Manage vehicle-------------------------------
+#----------------------------------Manage vehicle--------------------------
 #Manage vehicle page
 @get('/manage_vehicle')
 def manage_vehicle():
@@ -203,20 +157,21 @@ def manage_vehicle():
 
 @post('/manage_vehicle')
 def compute_vehicle():
-    #compute vehicle number
+
+#compute vehicle number ----------
     vehicle_number = request.forms.get('number')
-    #compute pay fine amount if paying fines is submitted
+#compute pay fine amount if paying fines is submitted ------------------
     if vehicle_number == None:
         return deduct_fines()
     return check_register_vehicle(vehicle_number)
 
-#deduct fines
+#deduct fines--------
 def deduct_fines():
     #TODO must update the total amount of fines to be payed to zero
     return fEngine.load_and_render('/user_profile')
 
 
-#----------------apply for license and user merit points-----------------------
+#----------------apply for license and user merit points
 @get('/apply_license')
 def manage_license():
     return fEngine.load_and_render('apply_license')
@@ -246,7 +201,6 @@ def compute_license():
     return fEngine.load_and_render('user_profile')
 
 #---------------------------register-------------------------------------
-#WEBPAGES
 #loads up register page
 @get('/register')
 def register():
@@ -262,22 +216,17 @@ def register():
 def register():
     return fEngine.load_and_render("employee_register")
 
-# FUNCTIONALITY - Muzz and Euan and Adam
 #attempt register
-def register_a_person(username, passowrd, person_type):
-    if (check_vaild_username_password(username, password)):
-        password = hash_function(password)
-        users.append([len(users),username,password,person_type,"",""]) #TODO: fix ID: should use a global static variable
-        save_users()
-        return True
-    return False
-
 @post('/user_register')
 def do_register():
     username = request.forms.get('username')
     password = request.forms.get('password')
-    if (register_a_person(username, password, "User")):
+    if (check_vaild_username_password(username, password)):
+        password = hash_function(password)
+        users.append([len(users),username,password,"User","",""])
+        save_users()
         return fEngine.load_and_render("user_profile", username=username)
+
     return fEngine.load_and_render("invalid", reason="Your username and password did not follow our guidlines. Please try again.")
 
 
@@ -286,10 +235,10 @@ def do_register():
 def do_register():
     username = request.forms.get('username')
     password = request.forms.get('password')
-    key = request.forms.get('key')
-    if (register_a_person(username, password, "Employee")): #TODO: determin whether staff or not
-        return fEngine.load_and_render("user_profile", username=username)
-    return fEngine.load_and_render("invalid", reason="Your username and password did not follow our guidlines. Please try again.")
+    password = hash_function(password)
+    key = 1
+    return check_do_register_employee(username, password, key)
+
 
 #-----------------
 #Check the registering process
@@ -300,7 +249,7 @@ def check_vaild_username_password(username, password):
 
     #Check username avaiability
     for u in users:
-        if (u[0] == username):
+        if (u[1] == username):
             return fEngine.load_and_render("invalid", reason="Please try another username.")
 
     #check password
@@ -327,49 +276,66 @@ def check_vaild_username_password(username, password):
         return False
 
 #registeration checker for the employee
-#TODO: Need to add special key for staff and employees
 def check_do_register_employee(username, password, key):
-    if (check_vaild_username_password(username, password)):
-        users.append(username)
-        password = hash_function(password)
-        keycheck = False
-        key = str(key)
-        if key == "1234abcd":
-            keycheck = True
-        if keycheck:
-            return fEngine.load_and_render("RTAlogin", username=username)
-        #else:
-    return fEngine.load_and_render("invalid", reason="Invalid password or username")
+    password = str(password)
+    username = str(username)
+    key = 1
+    #----------
+    #TODO need to make sure that the key is processed
+    if (len(password) > 8 and username != password and username not in users):
 
-def register_a_person(username, password, person_type):
-    if (check_vaild_username_password(username, password)):
-        password = hash_function(password)
-        users.append([len(users),username,password,person_type,"",""]) #TODO: fix ID: should use a global static variable
-        save_users()
-        return True
-    return False
+        # create bools correspondisng to password requirements
 
-# DONE MUZZ AND EUAN
-@post('/user_register')
-def do_register():
-    username = request.forms.get('username')
-    password = request.forms.get('password')
-    if (register_a_person(username, password, "User")):
-        return fEngine.load_and_render("user_profile", username=username)
-    return fEngine.load_and_render("invalid", reason="Your username and password did not follow our guidlines. Please try again.")
+        specialchar = False
+        capitals = False
+        numbers = False
 
-# TODO: EUAN
-#attempt register employee
-@post('/employee_register')
-def do_register():
-    username = request.forms.get('username')
-    password = request.forms.get('password')
-    if (register_a_person(username, password, "Employee")): #TODO: determin whether staff or not
-        return fEngine.load_and_render("user_profile", username=username)
-    return fEngine.load_and_render("invalid", reason="Your username and password did not follow our guidlines. Please try again.")
+        # create sets of strings that are used to check for password validity
 
-#-----------------------------LOGIN------------------------------------------------
-#WEBPAGES
+        chars = set(string.ascii_uppercase)
+        number = set(string.hexdigits)
+        punc = set(string.punctuation)
+
+        # check password validity
+
+        if any((c in chars) for c in password):
+            capitals = True
+        if any((c in punc) for c in password):
+            specialchar = True
+        if any((c in number) for c in password):
+            numbers = True
+        if (numbers == True and specialchar == True and capitals == True):
+            # append username to end of list of usernames
+            users.append(username)
+            password = hash_function(password)
+            with open('./database/users.txt', "r") as f:
+                content = f.read()
+
+                return fEngine.load_and_render("RTAlogin", username=username)
+    with open('./database/users.txt', "r") as f:
+        content = f.read()
+        return fEngine.load_and_render("RTAlogin", username=username, content=content)
+
+
+#-----------------------------------------------------------------------------
+
+# Check the login credentials
+def check_login(username, password):
+    login = False ## TODO: NEED TO CHANGE THIS!!!!!!!!!!!!!!!!!!!!!!! JUST USING IT FOR TESTING
+    password = hash_function(password)
+    if username != "admin": # Wrong Username
+        err_str = "Incorrect Username"
+        return err_str, login
+
+    if password != "TODO compare to hash":
+        err_str = "Incorrect Password"
+        return err_str, login
+
+    login_string = "Logged in!"
+    login = True
+    return login_string, login
+
+#-----------------------------------------------------------------------------
 # Redirect to login
 @route('/')
 @route('/home')
@@ -391,19 +357,6 @@ def login():
 def login():
     return fEngine.load_and_render("employee_login")
 
-#FUNCTIONALITY
-# Check the login credentials
-def check_login(username, password):
-    login = False
-    password = hash_function(password)
-
-    for user in users:
-        print(user)
-        if user[1] == username:
-            if password == user[2]:
-                return "Success", True
-    return "Unsuccessful", False
-
 # Attempt the user login
 @post('/user_login')
 def do_login():
@@ -411,10 +364,12 @@ def do_login():
     password = request.forms.get('password')
     err_str, login = check_login(username, password)
     if login:
+        #return fEngine.load_and_render("valid page", flag=err_str)
+        #TODO: NEED TO MAKE THIS Work for vaild and fail - also, need to make sure it works between the user and emplyoee pages
         return fEngine.load_and_render("user_profile")
     else:
-        return fEngine.load_and_render("user_login", reason=err_str)
-
+        # return fEngine.load_and_render("invalid page", reason=err_str)
+        return fEngine.load_and_render("user_profile")
 
 # Attempt the employee login
 @post('/employee_login')
@@ -429,10 +384,10 @@ def do_login():
     if login:
         #return fEngine.load_and_render("user_profile", flag=err_str)
         #TODO: NEED TO MAKE THIS Work for vaild and fail - also, need to make sure it works between the user and emplyoee pages
-        return fEngine.load_and_render("user_profile")
+        return fEngine.load_and_render("")
     else:
         # return fEngine.load_and_render("user_profile", reason=err_str)
-        return fEngine.load_and_render("employee_login", reason=err_str)
+        return fEngine.load_and_render("")
 
 @get('/about')
 def about():
