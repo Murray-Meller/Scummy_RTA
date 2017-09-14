@@ -184,8 +184,34 @@ def register():
 
 # FUNCTIONALITY
 #attempt register
-# DONE MUZZ AND EUAN
-#Check the details entered to see if they are valid
+def register_a_person(username, passowrd, person_type):
+    if (check_vaild_username_password(username, password)):
+        password = hash_function(password)
+        users.append([len(users),username,password,person_type,"",""]) #fix ID: should use a global static variable
+        save_users()
+        return True
+    return False
+
+@post('/user_register')
+def do_register():
+    username = request.forms.get('username')
+    password = request.forms.get('password')
+    if (register_a_person(username, password, "User")):
+        return fEngine.load_and_render("user_profile", username=username)
+    return fEngine.load_and_render("invalid", reason="Your username and password did not follow our guidlines. Please try again.")
+
+
+#attempt register employee
+@post('/employee_register')
+def do_register():
+    username = request.forms.get('username')
+    password = request.forms.get('password')
+    if (register_a_person(username, password, "Employee")): #TODO: determin whether staff or not
+        return fEngine.load_and_render("user_profile", username=username)
+    return fEngine.load_and_render("invalid", reason="Your username and password did not follow our guidlines. Please try again.")
+
+#-----------------
+#Check the registering process
 #Username and password validity
 def check_vaild_username_password(username, password):
     username = str(username)
