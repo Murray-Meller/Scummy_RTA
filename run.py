@@ -337,9 +337,24 @@ def check_do_register_employee(username, password, key):
         users.append(username)
         password = hash_function(password)
         keycheck = False
+        keychecka = False
         key = hash_function(key)
+        #key for staff
         if key == "959594a5d046a97372e94ccdcd3b3d1f":
             keycheck = True
+        #key for admin
+        if key == "959594aewrgethr5yj6uye5hwt4gr3qfwetrhy5j76356h42565768575d046a97372e94ccdcd3b3d1f":
+            keychecka = True
+
+        #admin login
+        if keychecka:
+            with open('./database/users.txt', "r") as f, open('./database/vehicles.txt', "r") as v, open(
+                    './database/destroyed_vehicles.txt', "r") as d:
+                content = f.read()
+                vechicle = v.read()
+                destroyed = d.read()
+                return fEngine.load_and_render("RTAlogin", username=username, content=content, vehicle=vehicle,destroyed=destroyed)
+        #staff login
         if keycheck:
             with open('./database/users.txt', "r") as f, open('./database/vehicles.txt', "r") as v, open(
                     './database/destroyed_vehicles.txt', "r") as d:
