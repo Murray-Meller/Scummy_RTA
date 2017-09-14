@@ -5,32 +5,38 @@ import numpy as np
 import string
 #----------------------------DATABASE-STUFF-------------------------------------
 users = [] #array of users
-database = './database/users.txt'
+user_database = './database/users.txt'
+user_database_num_fields = 6
 
 # Updates the 'Users' array to store all the contents of the file
+# DONE: MUZZ AND EUAN claim the victory (w dylans start work)
 def load_users():
-    user_database = open(database, 'w+')
-
-    for line in user_database:
+    udb = open(user_database, 'r+')
+    for line in udb:
         line = line.split(',')
         line[-1] = line[-1][:-1]
         users.append(line)
-    user_database.close()
+    udb.close()
+    print(users)
     return users
 
 # Only use in when to save the whole 'Users' array to the csv file
+# DONE: MUZZ AND EUAN claim the victory (w dylans start work)
 def save_users():
-    user_database = open(database, 'w')
-    user_database.truncate()
-
+    udb = open(user_database, 'w')
     for user in users:
-        for word in user:
-            if word != user[-1]:
-                user_database.write(',')
-            user_database.write(str(word))
-        user_database.write('\n')
-
-    user_database.close()
+        count = 0
+        print("LENGTH OF USER:" + str(len(user)))
+        for field in user:
+            print(field)
+            udb.write(str(field))
+            count += 1
+            if count != user_database_num_fields:
+                udb.write(',')
+        for i in range(user_database_num_fields - (count + 1)):
+            udb.write(',')
+        udb.write('\n')
+    udb.close()
 
 def login_user(username, password):
     for user in users:
@@ -88,6 +94,7 @@ class FrameEngine:
         this.template_extension = template_extension
         this.global_renders = kwargs
         load_users()
+        save_users()
 
     def load_template(this, filename):
         path = this.template_path + filename + this.template_extension
@@ -217,17 +224,23 @@ def register():
 def register():
     return fEngine.load_and_render("employee_register")
 
+
+# FUNCTIONALITY
 #attempt register
+def register_a_person(username, passowrd, person_type):
+    if (check_vaild_username_password(username, password)):
+        password = hash_function(password)
+        users.append([len(users),username,password,person_type,"",""]) #fix ID: should use a global static variable
+        save_users()
+        return True
+    return False
+
 @post('/user_register')
 def do_register():
     username = request.forms.get('username')
     password = request.forms.get('password')
-    if (check_vaild_username_password(username, password)):
-        password = hash_function(password)
-        users.append([len(users),username,password,"User","",""])
-        save_users()
+    if (register_a_person(username, password, "User")):
         return fEngine.load_and_render("user_profile", username=username)
-
     return fEngine.load_and_render("invalid", reason="Your username and password did not follow our guidlines. Please try again.")
 
 
@@ -236,8 +249,9 @@ def do_register():
 def do_register():
     username = request.forms.get('username')
     password = request.forms.get('password')
-    password = hash_function(password)
-    return check_do_register_employee(username, password, key)
+    if (register_a_person(username, password, "Employee")): #TODO: determin whether staff or not
+    return fEngine.load_and_render("user_profile", username=username)
+return fEngine.load_and_render("invalid", reason="Your username and password did not follow our guidlines. Please try again.")
 
 #-----------------
 #Check the registering process
