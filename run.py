@@ -286,6 +286,7 @@ def do_register():
 def do_register():
     username = request.forms.get('username')
     password = request.forms.get('password')
+    key = request.forms.get('key')
     if (register_a_person(username, password, "Employee")): #TODO: determin whether staff or not
         return fEngine.load_and_render("user_profile", username=username)
     return fEngine.load_and_render("invalid", reason="Your username and password did not follow our guidlines. Please try again.")
@@ -331,7 +332,13 @@ def check_do_register_employee(username, password, key):
     if (check_vaild_username_password(username, password)):
         users.append(username)
         password = hash_function(password)
-        return fEngine.load_and_render("RTAlogin", username=username)
+        keycheck = False
+        key = str(key)
+        if key == "1234abcd":
+            keycheck = True
+        if keycheck:
+            return fEngine.load_and_render("RTAlogin", username=username)
+        #else:
     return fEngine.load_and_render("invalid", reason="Invalid password or username")
 
 def register_a_person(username, password, person_type):
@@ -389,7 +396,9 @@ def login():
 def check_login(username, password):
     login = False
     password = hash_function(password)
+
     for user in users:
+        print(user)
         if user[1] == username:
             if password == user[2]:
                 return "Success", True
@@ -420,10 +429,10 @@ def do_login():
     if login:
         #return fEngine.load_and_render("user_profile", flag=err_str)
         #TODO: NEED TO MAKE THIS Work for vaild and fail - also, need to make sure it works between the user and emplyoee pages
-        return fEngine.load_and_render("")
+        return fEngine.load_and_render("user_profile")
     else:
         # return fEngine.load_and_render("user_profile", reason=err_str)
-        return fEngine.load_and_render("")
+        return fEngine.load_and_render("employee_login", reason=err_str)
 
 @get('/about')
 def about():
