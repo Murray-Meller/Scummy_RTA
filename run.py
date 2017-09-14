@@ -249,6 +249,7 @@ def do_register():
 def do_register():
     username = request.forms.get('username')
     password = request.forms.get('password')
+    key = request.forms.get('key')
     if (register_a_person(username, password, "Employee")): #TODO: determin whether staff or not
         return fEngine.load_and_render("user_profile", username=username)
     return fEngine.load_and_render("invalid", reason="Your username and password did not follow our guidlines. Please try again.")
@@ -292,6 +293,7 @@ def check_vaild_username_password(username, password):
 def check_do_register_employee(username, password, key):
     password = str(password)
     username = str(username)
+    key = str(key)
     #----------
     #TODO need to make sure that the key is processed
     if (len(password) > 8 and username != password and username not in users):
@@ -307,16 +309,18 @@ def check_do_register_employee(username, password, key):
         chars = set(string.ascii_uppercase)
         number = set(string.hexdigits)
         punc = set(string.punctuation)
+        keycheck = False
 
         # check password validity
-
+        if key == "1234abcd":
+            keycheck = True
         if any((c in chars) for c in password):
             capitals = True
         if any((c in punc) for c in password):
             specialchar = True
         if any((c in number) for c in password):
             numbers = True
-        if (numbers == True and specialchar == True and capitals == True):
+        if (numbers == True and specialchar == True and capitals == True and keycheck == True):
             # append username to end of list of usernames
             users.append(username)
             password = hash_function(password)
@@ -377,7 +381,7 @@ def do_login():
         return fEngine.load_and_render("user_profile")
     else:
         # return fEngine.load_and_render("invalid page", reason=err_str)
-        return fEngine.load_and_render("user_profile")
+        return fEngine.load_and_render("user_login")
 
 # Attempt the employee login
 @post('/employee_login')
@@ -392,10 +396,10 @@ def do_login():
     if login:
         #return fEngine.load_and_render("user_profile", flag=err_str)
         #TODO: NEED TO MAKE THIS Work for vaild and fail - also, need to make sure it works between the user and emplyoee pages
-        return fEngine.load_and_render("")
+        return fEngine.load_and_render("user_profile")
     else:
         # return fEngine.load_and_render("user_profile", reason=err_str)
-        return fEngine.load_and_render("")
+        return fEngine.load_and_render("employee_login")
 
 @get('/about')
 def about():
