@@ -17,7 +17,6 @@ def load_users():
         line[-1] = line[-1][:-1]
         users.append(line)
     udb.close()
-    print(users)
     return users
 
 # Only use in when to save the whole 'Users' array to the csv file
@@ -26,9 +25,7 @@ def save_users():
     udb = open(user_database, 'w')
     for user in users:
         count = 0
-        print("LENGTH OF USER:" + str(len(user)))
         for field in user:
-            print(field)
             udb.write(str(field))
             count += 1
             if count != user_database_num_fields:
@@ -38,39 +35,6 @@ def save_users():
         udb.write('\n')
     udb.close()
 
-def login_user(username, password):
-    for user in users:
-        if user[0] == username and user[1] == password:
-            return True
-    return False
-
-def login_employee(username, password, key):
-    global users
-    for user in users:
-        if user[0] == username and user[1] == password:
-            if user[2] == key:
-                return True
-    return False
-
-def register_user(username, password):
-
-    file = open(database, 'a')
-    username += ','
-    file.write(username)
-    file.write(password)
-    file.write('\n')
-    read_doc()
-
-def register_employee(username, password, key):
-    file = open(database, 'a')
-    username += ','
-    file.write(username)
-    password += ','
-    file.write(password)
-    file.write(key)
-    file.write('\n')
-    read_doc()
-
 #--------------------------------------HASHING---------------------------------------
 def hash_function(password):
     encodedPassword = password.encode()  # encodes the char to allow for hashing
@@ -79,12 +43,9 @@ def hash_function(password):
     return hashedHex
 
 
-#-----------------------------------------------------------------------------
+#--------------------------------WEBSERVER OBJECT---------------------------------------------
 # This class loads html files from the "template" directory and formats them using Python.
 # If you are unsure how this is working, just
-
-
-
 class FrameEngine:
     def __init__(this,
         template_path="templates/",
@@ -122,10 +83,6 @@ class FrameEngine:
         rendered_template = rendered_template + this.load_template(tailer)
         return rendered_template
 
-
-
-
-
 # Allow image loading
 @route('/img/<picture>')
 def serve_pictures(picture):
@@ -141,7 +98,7 @@ def serve_css(css):
 def serve_js(js):
     return static_file(js, root='js/')
 
-#-----------------------------------------------------------------------------
+#--------------------------- USER REGISTER VEHICLE--------------------------------------------------
 #user login register a vehicle page
 @get('/register_vehicle')
 def vehicle_register():
@@ -209,6 +166,7 @@ def compute_license():
     return fEngine.load_and_render('user_profile')
 
 #---------------------------register-------------------------------------
+#WEBPAGES
 #loads up register page
 @get('/register')
 def register():
@@ -223,7 +181,6 @@ def register():
 @get('/employee_register')
 def register():
     return fEngine.load_and_render("employee_register")
-
 
 # FUNCTIONALITY
 #attempt register
@@ -290,64 +247,49 @@ def check_vaild_username_password(username, password):
         return False
 
 #registeration checker for the employee
+#TODO: Need to add special key for staff and employees
 def check_do_register_employee(username, password, key):
-    password = str(password)
-    username = str(username)
-    key = str(key)
-    #----------
-    #TODO need to make sure that the key is processed
-    if (len(password) > 8 and username != password and username not in users):
-
-        # create bools correspondisng to password requirements
-
-        specialchar = False
-        capitals = False
-        numbers = False
-
-        # create sets of strings that are used to check for password validity
-
-        chars = set(string.ascii_uppercase)
-        number = set(string.hexdigits)
-        punc = set(string.punctuation)
+    if (check_vaild_username_password(username, password)):
+        users.append(username)
+        password = hash_function(password)
         keycheck = False
-
-        # check password validity
+        key = str(key)
         if key == "1234abcd":
             keycheck = True
-        if any((c in chars) for c in password):
-            capitals = True
-        if any((c in punc) for c in password):
-            specialchar = True
-        if any((c in number) for c in password):
-            numbers = True
-        if (numbers == True and specialchar == True and capitals == True and keycheck == True):
-            # append username to end of list of usernames
-            users.append(username)
-            password = hash_function(password)
+        if keycheck:
             return fEngine.load_and_render("RTAlogin", username=username)
-
+        #else:
     return fEngine.load_and_render("invalid", reason="Invalid password or username")
 
+def register_a_person(username, password, person_type):
+    if (check_vaild_username_password(username, password)):
+        password = hash_function(password)
+        users.append([len(users),username,password,person_type,"",""]) #fix ID: should use a global static variable
+        save_users()
+        return True
+    return False
 
-#-----------------------------------------------------------------------------
+# DONE MUZZ AND EUAN
+@post('/user_register')
+def do_register():
+    username = request.forms.get('username')
+    password = request.forms.get('password')
+    if (register_a_person(username, password, "User")):
+        return fEngine.load_and_render("user_profile", username=username)
+    return fEngine.load_and_render("invalid", reason="Your username and password did not follow our guidlines. Please try again.")
 
-# Check the login credentials
-def check_login(username, password):
-    login = False ## TODO: NEED TO CHANGE THIS!!!!!!!!!!!!!!!!!!!!!!! JUST USING IT FOR TESTING
-    password = hash_function(password)
-    if username != "admin": # Wrong Username
-        err_str = "Incorrect Username"
-        return err_str, login
+# TODO: EUAN
+#attempt register employee
+@post('/employee_register')
+def do_register():
+    username = request.forms.get('username')
+    password = request.forms.get('password')
+    if (register_a_person(username, password, "Employee")): #TODO: determin whether staff or not
+        return fEngine.load_and_render("user_profile", username=username)
+    return fEngine.load_and_render("invalid", reason="Your username and password did not follow our guidlines. Please try again.")
 
-    if password != "TODO compare to hash":
-        err_str = "Incorrect Password"
-        return err_str, login
-
-    login_string = "Logged in!"
-    login = True
-    return login_string, login
-
-#-----------------------------------------------------------------------------
+#-----------------------------LOGIN------------------------------------------------
+#WEBPAGES
 # Redirect to login
 @route('/')
 @route('/home')
@@ -369,6 +311,19 @@ def login():
 def login():
     return fEngine.load_and_render("employee_login")
 
+#FUNCTIONALITY
+# Check the login credentials
+def check_login(username, password):
+    login = False
+    password = hash_function(password)
+
+    for user in users:
+        print(user)
+        if user[1] == username:
+            if password == user[2]:
+                return "Success", True
+    return "Unsuccessful", False
+
 # Attempt the user login
 @post('/user_login')
 def do_login():
@@ -376,12 +331,10 @@ def do_login():
     password = request.forms.get('password')
     err_str, login = check_login(username, password)
     if login:
-        #return fEngine.load_and_render("valid page", flag=err_str)
-        #TODO: NEED TO MAKE THIS Work for vaild and fail - also, need to make sure it works between the user and emplyoee pages
         return fEngine.load_and_render("user_profile")
     else:
-        # return fEngine.load_and_render("invalid page", reason=err_str)
-        return fEngine.load_and_render("user_login")
+        return fEngine.load_and_render("user_login", reason=err_str)
+
 
 # Attempt the employee login
 @post('/employee_login')
@@ -399,7 +352,7 @@ def do_login():
         return fEngine.load_and_render("user_profile")
     else:
         # return fEngine.load_and_render("user_profile", reason=err_str)
-        return fEngine.load_and_render("employee_login")
+        return fEngine.load_and_render("employee_login", reason=err_str)
 
 @get('/about')
 def about():
