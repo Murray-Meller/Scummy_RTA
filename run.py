@@ -35,24 +35,6 @@ def save_users():
         udb.write('\n')
     udb.close()
 
-def login_employee(username, password, key):
-    global users
-    for user in users:
-        if user[0] == username and user[1] == password:
-            if user[2] == key:
-                return True
-    return False
-
-def register_employee(username, password, key):
-    file = open(database, 'a')
-    username += ','
-    file.write(username)
-    password += ','
-    file.write(password)
-    file.write(key)
-    file.write('\n')
-    read_doc()
-
 #--------------------------------------HASHING---------------------------------------
 def hash_function(password):
     encodedPassword = password.encode()  # encodes the char to allow for hashing
