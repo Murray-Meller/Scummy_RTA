@@ -5,11 +5,19 @@ import numpy as np
 import string
 #----------------------------DATABASE-STUFF-------------------------------------
 users = [] #array of users
+vehicles = [] #array of vehicles
+destroyed_vehicles = [] #array of destoryed_vehicles
+
 user_database = './database/users.txt'
+vehicle_database = './database/vehicles.txt'
+destroyed_vehicle_database = './database/destroyed_vehicles.txt'
+
 user_database_num_fields = 6
+vehicle_database_num_fields = 4
+destroyed_vehicle_database_num_fields = 1
 
 # Updates the 'Users' array to store all the contents of the file
-# DONE: MUZZ AND EUAN claim the victory (w dylans start work)
+# DONE: Muzz and Euan
 def load_users():
     udb = open(user_database, 'r+')
     for line in udb:
@@ -17,10 +25,11 @@ def load_users():
         line[-1] = line[-1][:-1]
         users.append(line)
     udb.close()
+    users.pop(0)
     return users
 
 # Only use in when to save the whole 'Users' array to the csv file
-# DONE: MUZZ AND EUAN claim the victory (w dylans start work)
+# DONE: Muzz and Euan
 def save_users():
     udb = open(user_database, 'w')
     for user in users:
@@ -35,13 +44,82 @@ def save_users():
         udb.write('\n')
     udb.close()
 
+# loads in the vehicles file into a global array called vehicles,
+# see vehciles.txt file for column details
+# Muzz
+def load_vehicles():
+    vdb = open(vehicle_database, 'r+')
+    for line in vdb:
+        line = line.split(',')
+        line[-1] = line[-1][:-1]
+        vehicles.append(line)
+    vdb.close()
+    vehicles.pop(0)
+    return vehicles
+
+# saves the global array vehicles to the file
+# should be called whenever you change a value in the array. (lame i know, but it works)
+# Muzz
+def save_vehicles():
+    vdb = open(vehicle_database, 'w')
+    for vehicle in vehicles:
+        count = 0
+        for field in vehicle:
+            vdb.write(str(field))
+            count += 1
+            if count != vehicle_database_num_fields:
+                vdb.write(',')
+        for i in range(vehicle_database_num_fields - (count + 1)):
+            vdb.write(',')
+        vdb.write('\n')
+    vdb.close()
+
+# loads in the destroyed_vehicles file into a global array called destroyed_vehicles,
+# see destroyed_vehciles.txt file for column details
+# Muzz
+def load_destroyed_vehicles():
+    dvdb = open(destroyed_vehicle_database, 'r+')
+    for line in dvdb:
+        line = line.split(',')
+        line[-1] = line[-1][:-1]
+        destroyed_vehicles.append(line)
+    dvdb.close()
+    destroyed_vehicles.pop(0)
+    return destroyed_vehicles
+
+# saves the global array destroyed_vehicles to the file
+# should be called whenever you change a value in the array. (lame i know, but it works)
+# Muzz
+def save_destroyed_vehicles():
+    dvdb = open(destroyed_vehicle_database, 'w')
+    for vehicle in destroyed_vehicles:
+        count = 0
+        for field in vehicle:
+            dvdb.write(str(field))
+            count += 1
+            if count != destroyed_vehicle_database_num_fields:
+                dvdb.write(',')
+        for i in range(destroyed_vehicle_database_num_fields - (count + 1)):
+            dvdb.write(',')
+        dvdb.write('\n')
+    dvdb.close()
+
+def load_database():
+    load_users()
+    load_vehicles()
+    load_destroyed_vehicles()
+
+def save_database():
+    save_users()
+    save_vehicles()
+    save_destroyed_vehicles()
+
 #--------------------------------------HASHING---------------------------------------
 def hash_function(password):
     encodedPassword = password.encode()  # encodes the char to allow for hashing
     hash = MD5.new(encodedPassword)  # creates new MD5 hash reference
     hashedHex = hash.hexdigest()  # digests the MD5 reference into a hash.
     return hashedHex
-
 
 #--------------------------------WEBSERVER OBJECT---------------------------------------------
 # This class loads html files from the "template" directory and formats them using Python.
@@ -54,8 +132,11 @@ class FrameEngine:
         this.template_path = template_path
         this.template_extension = template_extension
         this.global_renders = kwargs
-        load_users()
-        save_users()
+        load_database()
+        print("Users: " + str(users))
+        print("Vehicles " + str(vehicles))
+        print("Destroyed Vehicles " + str(destroyed_vehicles))
+        save_database()
 
     def load_template(this, filename):
         path = this.template_path + filename + this.template_extension
@@ -98,7 +179,7 @@ def serve_css(css):
 def serve_js(js):
     return static_file(js, root='js/')
 
-#--------------------------- USER REGISTER VEHICLE--------------------------------------------------
+#--------------------------- USER REGISTER VEHICLE------------------------------
 #user login register a vehicle page
 @get('/register_vehicle')
 def vehicle_register():
@@ -114,7 +195,7 @@ def do_vehicle_registration():
     vehicle_registration_number = request.forms.get('number')
     return check_register_vehicle(vehicle_registration_number)
 
-#----------------------------------Manage vehicle--------------------------
+#----------------------------------Manage vehicle-------------------------------
 #Manage vehicle page
 @get('/manage_vehicle')
 def manage_vehicle():
@@ -122,21 +203,20 @@ def manage_vehicle():
 
 @post('/manage_vehicle')
 def compute_vehicle():
-
-#compute vehicle number ----------
+    #compute vehicle number
     vehicle_number = request.forms.get('number')
-#compute pay fine amount if paying fines is submitted ------------------
+    #compute pay fine amount if paying fines is submitted
     if vehicle_number == None:
         return deduct_fines()
     return check_register_vehicle(vehicle_number)
 
-#deduct fines--------
+#deduct fines
 def deduct_fines():
     #TODO must update the total amount of fines to be payed to zero
     return fEngine.load_and_render('/user_profile')
 
 
-#----------------apply for license and user merit points
+#----------------apply for license and user merit points-----------------------
 @get('/apply_license')
 def manage_license():
     return fEngine.load_and_render('apply_license')
@@ -182,12 +262,12 @@ def register():
 def register():
     return fEngine.load_and_render("employee_register")
 
-# FUNCTIONALITY
+# FUNCTIONALITY - Muzz and Euan and Adam
 #attempt register
 def register_a_person(username, passowrd, person_type):
     if (check_vaild_username_password(username, password)):
         password = hash_function(password)
-        users.append([len(users),username,password,person_type,"",""]) #fix ID: should use a global static variable
+        users.append([len(users),username,password,person_type,"",""]) #TODO: fix ID: should use a global static variable
         save_users()
         return True
     return False
@@ -257,7 +337,7 @@ def check_do_register_employee(username, password, key):
 def register_a_person(username, password, person_type):
     if (check_vaild_username_password(username, password)):
         password = hash_function(password)
-        users.append([len(users),username,password,person_type,"",""]) #fix ID: should use a global static variable
+        users.append([len(users),username,password,person_type,"",""]) #TODO: fix ID: should use a global static variable
         save_users()
         return True
     return False
