@@ -14,6 +14,9 @@ users = [] #array of users
 vehicles = [] #array of vehicles
 destroyed_vehicles = [] #array of destoryed_vehicles
 
+current_user = 'default'
+permission = 3
+
 user_database = './database/users.txt'
 vehicle_database = './database/vehicles.txt'
 destroyed_vehicle_database = './database/destroyed_vehicles.txt'
@@ -414,6 +417,11 @@ def check_login(username, password):
     for user in users:
         if user[1] == username:
             if password == user[2]:
+                current_user = username
+                if user[3] == 'Staff':
+                    permission = 1
+                else:
+                    permission = 2
                 return "Success", True
     return "Unsuccessful, try again Alan", False
 
