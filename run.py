@@ -3,6 +3,7 @@ from Crypto.Hash import MD5
 import re
 import numpy as np
 import string
+
 #----------------------------DATABASE-STUFF-------------------------------------
 users = [] #array of users
 vehicles = [] #array of vehicles
@@ -25,7 +26,6 @@ def load_users():
         line[-1] = line[-1][:-1]
         users.append(line)
     udb.close()
-    users.pop(0)
     return users
 
 # Only use in when to save the whole 'Users' array to the csv file
@@ -54,7 +54,6 @@ def load_vehicles():
         line[-1] = line[-1][:-1]
         vehicles.append(line)
     vdb.close()
-    vehicles.pop(0)
     return vehicles
 
 # saves the global array vehicles to the file
@@ -84,7 +83,6 @@ def load_destroyed_vehicles():
         line[-1] = line[-1][:-1]
         destroyed_vehicles.append(line)
     dvdb.close()
-    destroyed_vehicles.pop(0)
     return destroyed_vehicles
 
 # saves the global array destroyed_vehicles to the file
@@ -104,17 +102,28 @@ def save_destroyed_vehicles():
         dvdb.write('\n')
     dvdb.close()
 
+# Muzz
 def load_database():
     load_users()
     load_vehicles()
     load_destroyed_vehicles()
 
+# Muzz
 def save_database():
     save_users()
     save_vehicles()
     save_destroyed_vehicles()
 
+# Muz -- TODO: will use to allow for an admin reset
+def admin_reset():
+    dvdb = open(user_database, 'w')
+    dvdb.close()
+    dvdb = open(vehicle_database, 'w')
+    dvdb.close()
+    dvdb = open(destroyed_vehicle_database, 'w')
+    dvdb.close()
 #--------------------------------------HASHING---------------------------------------
+# Adam?
 def hash_function(password):
     encodedPassword = password.encode()  # encodes the char to allow for hashing
     hash = MD5.new(encodedPassword)  # creates new MD5 hash reference
@@ -124,6 +133,7 @@ def hash_function(password):
 #--------------------------------WEBSERVER OBJECT---------------------------------------------
 # This class loads html files from the "template" directory and formats them using Python.
 # If you are unsure how this is working, just
+# Alan - INFO2315
 class FrameEngine:
     def __init__(this,
         template_path="templates/",
@@ -184,7 +194,6 @@ def serve_js(js):
 @get('/register_vehicle')
 def vehicle_register():
     return fEngine.load_and_render('register_vehicle')
-
 
 #define values for the vehcile registration
 def check_register_vehicle(vehicle):
@@ -263,35 +272,7 @@ def register():
     return fEngine.load_and_render("employee_register")
 
 # FUNCTIONALITY - Muzz and Euan and Adam
-#attempt register
-def register_a_person(username, passowrd, person_type):
-    if (check_vaild_username_password(username, password)):
-        password = hash_function(password)
-        users.append([len(users),username,password,person_type,"",""]) #TODO: fix ID: should use a global static variable
-        save_users()
-        return True
-    return False
 
-@post('/user_register')
-def do_register():
-    username = request.forms.get('username')
-    password = request.forms.get('password')
-    if (register_a_person(username, password, "User")):
-        return fEngine.load_and_render("user_profile", username=username)
-    return fEngine.load_and_render("invalid", reason="Your username and password did not follow our guidlines. Please try again.")
-
-
-#attempt register employee
-@post('/employee_register')
-def do_register():
-    username = request.forms.get('username')
-    password = request.forms.get('password')
-    key = request.forms.get('key')
-    if (register_a_person(username, password, "Employee")): #TODO: determin whether staff or not
-        return fEngine.load_and_render("user_profile", username=username)
-    return fEngine.load_and_render("invalid", reason="Your username and password did not follow our guidlines. Please try again.")
-
-#-----------------
 #Check the registering process
 #Username and password validity
 def check_vaild_username_password(username, password):
@@ -332,14 +313,8 @@ def check_do_register_employee(username, password, key):
     if (check_vaild_username_password(username, password)):
         users.append(username)
         password = hash_function(password)
-        keycheck = False
-        key = str(key)
-        if key == "1234abcd":
-            keycheck = True
-        if keycheck:
-            return fEngine.load_and_render("RTAlogin", username=username)
-        #else:
-    return fEngine.load_and_render("invalid", reason="Invalid password or username")
+
+
 
 def register_a_person(username, password, person_type):
     if (check_vaild_username_password(username, password)):
@@ -364,10 +339,20 @@ def do_register():
 def do_register():
     username = request.forms.get('username')
     password = request.forms.get('password')
-    if (register_a_person(username, password, "Employee")): #TODO: determin whether staff or not
-        return fEngine.load_and_render("user_profile", username=username)
-    return fEngine.load_and_render("invalid", reason="Your username and password did not follow our guidlines. Please try again.")
+    key = request.forms.get('authenication')
 
+    keycheck = False
+    key = str(key)
+    if key == "1234abcd":
+        keycheck = True
+        if key == "1234abcd":
+            keycheck = True
+    if (register_a_person(username, password, "Employee")): #TODO: determin whether staff or not
+
+        if keycheck:
+            return fEngine.load_and_render("RTAlogin", username=username)
+
+    return fEngine.load_and_render("employee_register", reason="Invalid password or username")
 #-----------------------------LOGIN------------------------------------------------
 #WEBPAGES
 # Redirect to login
