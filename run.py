@@ -4,6 +4,11 @@ import re
 import numpy as np
 import string
 
+#TODO: temporary until cookies are used
+global current_user
+global current_user_type
+current_user = ""
+current_user_type = ""
 #----------------------------DATABASE-STUFF-------------------------------------
 users = [] #array of users
 vehicles = [] #array of vehicles
@@ -139,10 +144,7 @@ def hash_function(password):
 # If you are unsure how this is working, just
 # Alan - INFO2315
 class FrameEngine:
-    def __init__(this,
-        template_path="templates/",
-        template_extension=".html",
-        **kwargs):
+    def __init__(this, template_path="templates/", template_extension=".html", **kwargs):
         this.template_path = template_path
         this.template_extension = template_extension
         this.global_renders = kwargs
@@ -170,7 +172,8 @@ class FrameEngine:
     def load_and_render(this, filename, header="header", tailer="tailer", **kwargs):
         template = this.load_template(filename)
         rendered_template = this.render(template, **kwargs)
-        rendered_template = this.load_template(header) + rendered_template
+        print("In render: " + current_user)
+        rendered_template = this.render(this.load_template(header), NAME=current_user) + rendered_template
         rendered_template = rendered_template + this.load_template(tailer)
         return rendered_template
 
@@ -309,10 +312,16 @@ def check_vaild_username_password(username, password):
         return False
 
 def register_a_person(username, password, person_type):
+    global current_user
+    global current_user_type
+
     if (check_vaild_username_password(username, password)):
         password = hash_function(password)
         users.append([len(users),username,password,person_type,"",""]) #TODO: fix ID: should use a global static variable
         save_users()
+
+        current_user = username
+        current_user_type = person_type
         return True
     return False
 
@@ -349,6 +358,8 @@ def do_register():
     key = request.forms.get('key')
 
     if (register_an_employee(username, password, key)):
+        #set the current user to this guy
+
         content = ""
         for user in users:
             for field in user:
@@ -412,11 +423,16 @@ def do_login():
     username = request.forms.get('username')
     password = request.forms.get('password')
     err_str, login = check_login(username, password)
+
+    global current_user
+    global current_user_type
+
     if login:
+        current_user = username
+        current_user_type = "User"
         return fEngine.load_and_render("user_profile")
     else:
         return fEngine.load_and_render("user_login", reason=err_str)
-
 
 # Attempt the employee login
 @post('/employee_login')
@@ -425,18 +441,28 @@ def do_login():
     password = request.forms.get('password')
     key = request.forms.get('authenication')
 
+    global current_user
+    global current_user_type
+
     valid = False
     key = hash_function(key)
+    employee_type = ""
     if key == "959594a5d046a97372e94ccdcd3b3d1f":
         valid = True
+        employee_type = "Staff"
     elif key == "959594aewrgethr5yj6uye5hwt4gr3qfwetrhy5j76356h42565768575d046a97372e94ccdcd3b3d1f":
         valid = True
+        employee_type = "Admin"
     else:
         return False
 
     #TODO: it will probably need to load different pages based what kinda of staff member they are
     err_str, login = check_login(username, password)
     if login and valid:
+        # set the current user to this person
+        current_user = username
+        current_user_type = employee_type
+
         content = ""
         for user in users:
             for field in user:
@@ -456,6 +482,34 @@ def do_login():
             destroyed += "|\n"
         return fEngine.load_and_render("RTAlogin", username=username, content=content, vehicle=vehicle, destroyed=destroyed)
     return fEngine.load_and_render("employee_login", reason=err_str)
+# Attempt the user login
+@post('/user_login')
+def do_login():
+    username = request.forms.get('username')
+    password = request.forms.get('password')
+    err_str, login = check_login(username, password)
+
+    global current_user
+    global current_user_type
+
+    if login:
+        current_user = username
+        current_user_type = "User"
+        return fEngine.load_and_render("user_profile")
+    else:
+        return fEngine.load_and_render("user_login", reason=err_str)
+
+# Attempt the employee login
+@get('/logout')
+def do_login():
+    global current_user
+    global current_user_type
+
+    current_user = ""
+    current_user_type = ""
+
+
+    return fEngine.load_and_render("index")
 
 @get('/about')
 def about():
