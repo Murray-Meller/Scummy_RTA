@@ -250,8 +250,8 @@ def do_register():
     username = request.forms.get('username')
     password = request.forms.get('password')
     if (register_a_person(username, password, "Employee")): #TODO: determin whether staff or not
-    return fEngine.load_and_render("user_profile", username=username)
-return fEngine.load_and_render("invalid", reason="Your username and password did not follow our guidlines. Please try again.")
+        return fEngine.load_and_render("user_profile", username=username)
+    return fEngine.load_and_render("invalid", reason="Your username and password did not follow our guidlines. Please try again.")
 
 #-----------------
 #Check the registering process
