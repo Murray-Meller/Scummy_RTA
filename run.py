@@ -14,9 +14,6 @@ users = [] #array of users
 vehicles = [] #array of vehicles
 destroyed_vehicles = [] #array of destoryed_vehicles
 
-current_user = 'default'
-permission = 3
-
 user_database = './database/users.txt'
 vehicle_database = './database/vehicles.txt'
 destroyed_vehicle_database = './database/destroyed_vehicles.txt'
@@ -412,16 +409,13 @@ def login():
 def check_login(username, password):
     login = False
     password = hash_function(password)
+
+
     if (username== "" or password == ""):
         return "Incorrect, you think you could get in that easy",False
     for user in users:
         if user[1] == username:
             if password == user[2]:
-                current_user = username
-                if user[3] == 'Staff':
-                    permission = 1
-                else:
-                    permission = 2
                 return "Success", True
     return "Unsuccessful, try again Alan", False
 
@@ -490,6 +484,7 @@ def do_login():
             destroyed += "|\n"
         return fEngine.load_and_render("RTAlogin", username=username, content=content, vehicle=vehicle, destroyed=destroyed)
     return fEngine.load_and_render("employee_login", reason=err_str)
+
 # Attempt the user login
 @post('/user_login')
 def do_login():
@@ -506,6 +501,35 @@ def do_login():
         return fEngine.load_and_render("user_profile")
     else:
         return fEngine.load_and_render("user_login", reason=err_str)
+
+@get('/userpage')
+def do_login():
+    global current_user
+    global current_user_type
+
+    if current_user_type == "Staff" or current_user_type == "Admin":
+        content = ""
+        for user in users:
+            for field in user:
+                content += "| " + str(field) + " " * (25 - len(str(field))) + " "
+            content += "|\n"
+
+        vehicle = ""
+        for car in vehicles:
+            for field in car:
+                vehicle += "| " + str(field) + " " * (20 - len(str(field))) + " "
+            vehicle += "|\n"
+
+        destroyed = ""
+        for car in destroyed_vehicles:
+            for field in car:
+                destroyed += "| " + str(field) + " " * (10 - len(str(field))) + " "
+            destroyed += "|\n"
+        return fEngine.load_and_render("RTAlogin", username=username, content=content, vehicle=vehicle, destroyed=destroyed)
+    elif current_user_type == "User":
+        return fEngine.load_and_render("user_profile")
+    else:
+        return fEngine.load_and_render("index")
 
 # Attempt the employee login
 @get('/logout')
