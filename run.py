@@ -332,7 +332,7 @@ def register_an_employee(username, password, key):
     key = hash_function(key)
     if key == "959594a5d046a97372e94ccdcd3b3d1f":
         employee_type = "Staff"
-    elif key == "959594aewrgethr5yj6uye5hwt4gr3qfwetrhy5j76356h42565768575d046a97372e94ccdcd3b3d1f":
+    elif key == "13347ef9fa4c347ce69416bf3b6272e1":
         employee_type = "Admin"
     else:
         return False
@@ -356,29 +356,44 @@ def do_register():
     username = request.forms.get('username')
     password = request.forms.get('password')
     key = request.forms.get('key')
-
     if (register_an_employee(username, password, key)):
         #set the current user to this guy
+        if (hash_function(key) == "959594a5d046a97372e94ccdcd3b3d1f"):
+            content = ""
+            for user in users:
+                for field in user:
+                    content += "| " + str(field) + " " * (25 - len(str(field))) + " "
+                content += "|\n"
 
-        content = ""
-        for user in users:
-            for field in user:
-                content += "| " + str(field) + " " * (25 - len(str(field))) + " "
-            content += "|\n"
+            vehicle = ""
+            for car in vehicles:
+                for field in car:
+                    vehicle += "| " + str(field) + " " * (20 - len(str(field))) + " "
+                vehicle += "|\n"
+            destroyed = ""
+            for car in destroyed_vehicles:
+                for field in car:
+                    destroyed += "| " + str(field) + " " * (10 - len(str(field))) + " "
+                destroyed += "|\n"
+            return fEngine.load_and_render("RTAlogin", username=username, content=content, vehicle=vehicle, destroyed=destroyed)
+        else:
+            content = ""
+            for user in users:
+                for field in user:
+                    content += "| " + str(field) + " " * (25 - len(str(field))) + " "
+                content += "|\n"
 
-        vehicle = ""
-        for car in vehicles:
-            for field in car:
-                vehicle += "| " + str(field) + " " * (20 - len(str(field))) + " "
-            vehicle += "|\n"
-
-        destroyed = ""
-        for car in destroyed_vehicles:
-            for field in car:
-                destroyed += "| " + str(field) + " " * (10 - len(str(field))) + " "
-            destroyed += "|\n"
-
-        return fEngine.load_and_render("RTAlogin", username=username, content=content, vehicle=vehicle, destroyed=destroyed)
+            vehicle = ""
+            for car in vehicles:
+                for field in car:
+                    vehicle += "| " + str(field) + " " * (20 - len(str(field))) + " "
+                vehicle += "|\n"
+            destroyed = ""
+            for car in destroyed_vehicles:
+                for field in car:
+                    destroyed += "| " + str(field) + " " * (10 - len(str(field))) + " "
+                destroyed += "|\n"
+            return fEngine.load_and_render("RTAlogin", username=username, content=content, vehicle=vehicle,destroyed=destroyed)
     return fEngine.load_and_render("employee_register", reason="Your username and password did not follow our guidlines. Please try again.")
 
 #-----------------------------LOGIN------------------------------------------------
@@ -525,7 +540,7 @@ def do_login():
             for field in car:
                 destroyed += "| " + str(field) + " " * (10 - len(str(field))) + " "
             destroyed += "|\n"
-        return fEngine.load_and_render("RTAlogin", username=username, content=content, vehicle=vehicle, destroyed=destroyed)
+        return fEngine.load_and_render("RTAlogin", username=current_user, content=content, vehicle=vehicle, destroyed=destroyed)
     elif current_user_type == "User":
         return fEngine.load_and_render("user_profile")
     else:
