@@ -172,6 +172,9 @@ class FrameEngine:
     def load_and_render(this, filename, header="header", tailer="tailer", **kwargs):
         template = this.load_template(filename)
         rendered_template = this.render(template, **kwargs)
+        current_user = ""
+        if request.cookies.get('current_user', '0') != '0':
+            current_user = request.cookies.get('current_user', '0')
         print("In render: " + current_user)
         rendered_template = this.render(this.load_template(header), NAME=current_user) + rendered_template
         rendered_template = rendered_template + this.load_template(tailer)
@@ -320,8 +323,8 @@ def register_a_person(username, password, person_type):
         users.append([len(users),username,password,person_type,"",""]) #TODO: fix ID: should use a global static variable
         save_users()
 
-        current_user = username
-        current_user_type = person_type
+        response.set_cookie('current_user', username)
+        response.set_cookie('current_user_type', person_type)
         return True
     return False
 
@@ -445,8 +448,8 @@ def do_login():
     global current_user_type
 
     if login:
-        current_user = username
-        current_user_type = "User"
+        response.set_cookie('current_user', username)
+        response.set_cookie('current_user_type', "User")
         return fEngine.load_and_render("user_profile")
     else:
         return fEngine.load_and_render("user_login", reason=err_str)
@@ -477,8 +480,8 @@ def do_login():
     err_str, login = check_login(username, password)
     if login and valid:
         # set the current user to this person
-        current_user = username
-        current_user_type = employee_type
+        response.set_cookie('current_user', username)
+        response.set_cookie('current_user_type', employee_type)
 
         content = ""
         for user in users:
@@ -511,16 +514,16 @@ def do_login():
     global current_user_type
 
     if login:
-        current_user = username
-        current_user_type = "User"
+        response.set_cookie('current_user', username)
+        response.set_cookie('current_user_type', "User")
         return fEngine.load_and_render("user_profile")
     else:
         return fEngine.load_and_render("user_login", reason=err_str)
 
 @get('/userpage')
 def do_login():
-    global current_user
-    global current_user_type
+    current_user = request.cookies.get('current_user', '0')
+    current_user_type = request.cookies.get('current_user_type', '0')
 
     if current_user_type == "Staff" or current_user_type == "Admin":
         content = ""
@@ -552,8 +555,8 @@ def do_login():
     global current_user
     global current_user_type
 
-    current_user = ""
-    current_user_type = ""
+    response.delete_cookie('current_user')
+    response.delete_cookie('current_user_type')
 
 
     return fEngine.load_and_render("index")
