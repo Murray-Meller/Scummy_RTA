@@ -558,8 +558,7 @@ def do_login():
     response.delete_cookie('current_user')
     response.delete_cookie('current_user_type')
 
-
-    return fEngine.load_and_render("index")
+    return fEngine.load_and_render("logout")
 
 @get('/about')
 def about():
