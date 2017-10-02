@@ -283,7 +283,7 @@ def register():
 def check_vaild_username_password(username, password):
     username = str(username)
     password = str(password)
-    if (username== "" or password ==""):
+    if (username=="" or " " in username or password ==""):
         return False
 
     #Check username avaiability
