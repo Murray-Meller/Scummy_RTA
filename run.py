@@ -324,7 +324,7 @@ def register_a_person(username, password, person_type):
         save_users()
 
         response.set_cookie('current_user', username)
-        response.set_cookie('current_user_type', person_type)
+        response.set_cookie('current_user_type', hash_cookie(username, person_type))
         return True
     return False
 
@@ -343,6 +343,24 @@ def register_an_employee(username, password, key):
     if (register_a_person(username, password, employee_type)):
         return True
     return False
+
+# Returns the hash meant for a given user
+def hash_cookie(username, user_type):
+    concate = user_type + username[:3]
+    hash = MD5.new(concate.encode()).hexdigest()
+    return hash
+
+# Checks if the cookie matches their user type
+def check_user_type(username, hash):
+    user_type = ""
+    for user in users:
+        if user[1] == username:
+            user_type = user[3]
+
+    if hash == hash_cookie(username, user_type):
+        return user_type
+    else:
+        return "User"
 
 # DONE MUZZ AND EUAN
 @post('/user_register')
@@ -449,7 +467,7 @@ def do_login():
 
     if login:
         response.set_cookie('current_user', username)
-        response.set_cookie('current_user_type', "User")
+        response.set_cookie('current_user_type', hash_cookie(username, "User"))
         return fEngine.load_and_render("user_profile")
     else:
         return fEngine.load_and_render("user_login", reason=err_str)
@@ -459,7 +477,7 @@ def do_login():
 def do_login():
     username = request.forms.get('username')
     password = request.forms.get('password')
-    key = request.forms.get('authenication')
+    key = request.forms.get('authentication')
 
     global current_user
     global current_user_type
@@ -481,7 +499,7 @@ def do_login():
     if login and valid:
         # set the current user to this person
         response.set_cookie('current_user', username)
-        response.set_cookie('current_user_type', employee_type)
+        response.set_cookie('current_user_type', hash_cookie(username, hash_cookie(username, employee_type)))
 
         content = ""
         for user in users:
@@ -515,7 +533,7 @@ def do_login():
 
     if login:
         response.set_cookie('current_user', username)
-        response.set_cookie('current_user_type', "User")
+        response.set_cookie('current_user_type', hash_cookie(username, "User"))
         return fEngine.load_and_render("user_profile")
     else:
         return fEngine.load_and_render("user_login", reason=err_str)
@@ -524,6 +542,7 @@ def do_login():
 def do_login():
     current_user = request.cookies.get('current_user', '0')
     current_user_type = request.cookies.get('current_user_type', '0')
+    current_user_type = check_user_type(current_user, current_user_type)
 
     if current_user_type == "Staff" or current_user_type == "Admin":
         content = ""
