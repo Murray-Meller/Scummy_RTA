@@ -179,6 +179,15 @@ def check_login(username, password):
             if password == user[2]:
                 return "Success", True
     return "Unsuccessful, try again Alan", False
+
+# Checks if the cookie matches their user type - TODO: found a bug
+def check_user_type(username, said_type):
+    for user in users:
+        if user[1] == username:
+            if user[3] == said_type:
+                return True
+    return False
+
 #--------------------------------------HASHING---------------------------------------
 # Adam?
 def hash_function(password):
@@ -336,18 +345,6 @@ def hash_cookie(username, user_type):
     hash = MD5.new(concate.encode()).hexdigest()
     return hash
 
-# Checks if the cookie matches their user type - TODO: found a bug
-def check_user_type(username, hash):
-    user_type = ""
-    for user in users:
-        if user[1] == username:
-            user_type = user[3]
-
-    if hash == hash_cookie(username, user_type):
-        return user_type
-    else:
-        return "User"
-
 def get_employee_type(key):
     key = hash_function(key)
     employee_type = ""
@@ -483,7 +480,7 @@ def do_login():
     # check the login is valid
     err_str, valid_login = check_login(username, password)
 
-    if valid_login:
+    if valid_login and check_user_type(username, "User"):
         response.set_cookie('current_user', username)
         response.set_cookie('current_user_type', "User")
         redirect("/user_profile")
@@ -496,6 +493,8 @@ def do_login():
     current_user_type = request.cookies.get('current_user_type', '0')
 
     #TODO: check if cookies are empty in which case load the index
+    if (current_user == "0" or current_user_type == "0"):
+        return fEngine.load_and_render("index")
 
     #check for any attacks in the cookies
     reply = ""
@@ -505,7 +504,8 @@ def do_login():
         return fEngine.load_and_render("invalid", reason=reply)
 
     #check the user and their type match
-    # FIXME: current_user_type = check_user_type(current_user, current_user_type)
+    if (check_user_type(current_user, current_user_type)):
+        return fEngine.load_and_render("invalid", reason="There is an issue with you and your cookies")
 
     if current_user_type == "Staff" or current_user_type == "Admin":
         return fEngine.load_and_render("RTAlogin", content=get_users_string(), vehicle=get_vehicles_string(), destroyed=get_destroyed_vehicle_string())
@@ -526,9 +526,6 @@ def about():
     return fEngine.load_and_render("about", garble="To be a very meme centered RTA")
 
 #-------------------------------------------------------------------------------
-
-
-
 
 class WAFCaller(object):
     def __init__(self, waf_address, waf_port):
