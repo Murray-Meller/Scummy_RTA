@@ -29,6 +29,7 @@ def verify_email(email):
 
 @post('/waf/password/<password:path>')
 def verify_password(password):
+    print(len(password))
     if len(password) < 8:
         return "Password is too short"
 

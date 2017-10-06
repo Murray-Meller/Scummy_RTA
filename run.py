@@ -6,6 +6,8 @@ import string
 
 import requests
 
+#Staff: Alan
+#Admin: John
 
 host_addr = "localhost"
 frontend_port = 8080
@@ -269,9 +271,11 @@ def manage_vehicle():
 def compute_vehicle():
     #compute vehicle number
     vehicle_number = request.forms.get('number')
+
     #compute pay fine amount if paying fines is submitted
     if vehicle_number == None:
         return deduct_fines()
+
     return check_register_vehicle(vehicle_number)
 
 #deduct fines
@@ -292,6 +296,7 @@ def compute_license():
     application = request.forms.get('param', '')
     aplitcation = str(application)
     file = open(database, 'r')
+
     #TODO this is a basic check for if user is already applied etc...what needs to be done is correctly correlate this to the right user.
     if (application == "Applying" and ("Unlicensed" not in file)):
         file.close()
@@ -325,79 +330,13 @@ def register():
     return fEngine.load_and_render("employee_register")
 
 # FUNCTIONALITY - Muzz and Euan and Adam
-#Check the registering process
-#Username and password validity
-def check_vaild_username_password(username, password):
-    username = str(username)
-    password = str(password)
-    if (username=="" or " " in username or password ==""):
-        return False
-
-    #Check username avaiability
-    for u in users:
-        if (str(u[1]) == username):
-            return False
-
-    #check password
-    if (len(password) > 8 and username != password):
-        #create bools corresponding to password requirements
-        specialchar = False
-        capitals = False
-        numbers = False
-
-        #create sets of strings that are used to check for password validity
-        chars = set(string.ascii_uppercase)
-        number = set(string.hexdigits)
-        punc = set(string.punctuation)
-
-        #check password validity
-        if any((c in chars) for c in password):
-            capitals = True
-        if any((c in punc) for c in password):
-            specialchar = True
-        if any((c in number)for c in password):
-            numbers = True
-        if (numbers == True and specialchar == True and capitals == True):
-            return True
-        return False
-
-def register_a_person(username, password, person_type):
-    global current_user
-    global current_user_type
-
-    if (check_vaild_username_password(username, password)):
-        password = hash_function(password)
-        users.append([len(users),username,password,person_type,"",""]) #TODO: fix ID: should use a global static variable
-        save_users()
-
-        response.set_cookie('current_user', username)
-        response.set_cookie('current_user_type', hash_cookie(username, person_type))
-        return True
-    return False
-
-#registeration checker for the employee
-def register_an_employee(username, password, key):
-    # Checks authentication code and determines type
-    employee_type = "none"
-    key = hash_function(key)
-    if key == "959594a5d046a97372e94ccdcd3b3d1f":
-        employee_type = "Staff"
-    elif key == "13347ef9fa4c347ce69416bf3b6272e1":
-        employee_type = "Admin"
-    else:
-        return False
-
-    if (register_a_person(username, password, employee_type)):
-        return True
-    return False
-
 # Returns the hash meant for a given user
 def hash_cookie(username, user_type):
     concate = user_type + username[:3]
     hash = MD5.new(concate.encode()).hexdigest()
     return hash
 
-# Checks if the cookie matches their user type
+# Checks if the cookie matches their user type - TODO: found a bug
 def check_user_type(username, hash):
     user_type = ""
     for user in users:
@@ -409,32 +348,72 @@ def check_user_type(username, hash):
     else:
         return "User"
 
-# DONE MUZZ AND EUAN
-@post('/user_register')
-def do_register():
-    username = request.forms.get('username')
-    password = request.forms.get('password
+def get_employee_type(key):
+    key = hash_function(key)
+    employee_type = ""
+    if key == "ec8b63c05f999a15a8c8567002a560a8":
+        return "Staff"
+    elif key == "61409aa1fd47d4a5332de23cbf59a36f":
+        return "Admin"
+    else:
+        return None
 
+def register_a_person(username, password, person_type):
+    #Check special cases
+    if (username=="" or " " in username or password ==""):
+        return False
+
+    #Check username avaiability
+    for u in users:
+        if (str(u[1]) == username):
+            return False
+
+    password = hash_function(password)
+    users.append([len(users),username,password,person_type,"",""]) #TODO: fix ID: should use a global static variable
+    save_users()
+
+    return True
+
+@post('/user_register')
+def user_register():
+    username = request.forms.get('username')
+    password = request.forms.get('password')
+
+    # check for no attacks in the strings
+    reply = ""
+    reply += waf.check_email(username)
+    reply += waf.check_password(password)
+    if (reply != ""):
+        return fEngine.load_and_render("invalid", reason=reply)
 
     if (register_a_person(username, password, "User")):
-        return fEngine.load_and_render("user_profile", username=username)
-    return fEngine.load_and_render("invalid", reason="Your username and password did not follow our guidlines. Please try again.")
+        response.set_cookie('current_user', username)
+        response.set_cookie('current_user_type', "User")
+        redirect("/user_profile")
+    return fEngine.load_and_render("invalid", reason="This username cannot be used")
 
 #attempt register employee
 @post('/employee_register')
-def do_register():
+def employee_register():
     username = request.forms.get('username')
     password = request.forms.get('password')
     key = request.forms.get('key')
 
     #check for any attacks in the strings
-    waf.check_email(username)
-    waf.check_password(password)
-    waf.check_attack(key)
+    reply = ""
+    reply += waf.check_email(username)
+    reply += waf.check_password(password)
+    reply += waf.check_attack(key)
+    if (reply != ""):
+        return fEngine.load_and_render("invalid", reason=reply)
+
+    employee_type = get_employee_type(key)
 
     # register them anbd if it is succesful
-    if (register_an_employee(username, password, key)):
-        Redirect("user_profile")
+    if (employee_type != None and register_a_person(username, password, employee_type)):
+        response.set_cookie('current_user', username)
+        response.set_cookie('current_user_type', employee_type)
+        redirect("/user_profile")
     return fEngine.load_and_render("employee_register", reason="Your username and password did not follow our guidlines. Please try again.")
 
 #-----------------------------LOGIN------------------------------------------------
@@ -448,16 +427,19 @@ def index():
 # Display the login page
 @get('/login')
 def login():
+    #TODO: check if already logged in
     return fEngine.load_and_render("pre_login")
 
 # Display the users login page
 @get('/user_login')
 def login():
+    #TODO: check if already logged in
     return fEngine.load_and_render("user_login")
 
 # Display the employees login page
 @get('/employee_login')
 def login():
+    #TODO: check if already logged in
     return fEngine.load_and_render("employee_login")
 
 #FUNCTIONALITY
@@ -469,27 +451,20 @@ def do_login():
     key = request.forms.get('authentication')
 
     # check for any attacks in the string
-    waf.check_email(username)
-    waf.check_password(password)
-    waf.check_attack(key)
+    reply = ""
+    reply += waf.check_email(username)
+    reply += waf.check_password(password)
+    reply += waf.check_attack(key)
+    if (reply != ""):
+        return fEngine.load_and_render("invalid", reason=reply)
 
-    valid = False
-    key = hash_function(key)
-    employee_type = ""
-    if key == "959594a5d046a97372e94ccdcd3b3d1f":
-        valid = True
-        employee_type = "Staff"
-    elif key == "959594aewrgethr5yj6uye5hwt4gr3qfwetrhy5j76356h42565768575d046a97372e94ccdcd3b3d1f":
-        valid = True
-        employee_type = "Admin"
-    else:
-        valid = False
+    employee_type = get_employee_type(key)
 
-    err_str, login = check_login(username, password)
-    if login and valid:
+    err_str, validLogin = check_login(username, password)
+    if employee_type != None and validLogin:
         response.set_cookie('current_user', username)
         response.set_cookie('current_user_type', employee_type)
-        redirect("user_profile")
+        redirect("/user_profile")
     return fEngine.load_and_render("employee_login", reason=err_str)
 
 # Attempt the user login
@@ -499,13 +474,16 @@ def do_login():
     password = request.forms.get('password')
 
     #check for any attacks in the username or passwords
-    waf.check_email(username)
-    waf.check_password(password)
+    reply = ""
+    reply += waf.check_email(username)
+    reply += waf.check_password(password)
+    if (reply != ""):
+        return fEngine.load_and_render("invalid", reason=reply)
 
     # check the login is valid
-    err_str, login = check_login(username, password)
+    err_str, valid_login = check_login(username, password)
 
-    if login:
+    if valid_login:
         response.set_cookie('current_user', username)
         response.set_cookie('current_user_type', "User")
         redirect("/user_profile")
@@ -517,9 +495,14 @@ def do_login():
     current_user = request.cookies.get('current_user', '0')
     current_user_type = request.cookies.get('current_user_type', '0')
 
+    #TODO: check if cookies are empty in which case load the index
+
     #check for any attacks in the cookies
-    waf.check_attack(current_user)
-    waf.check_attack(current_user_type)
+    reply = ""
+    reply += waf.check_email(current_user)
+    reply += waf.check_attack(current_user_type)
+    if (reply != ""):
+        return fEngine.load_and_render("invalid", reason=reply)
 
     #check the user and their type match
     # FIXME: current_user_type = check_user_type(current_user, current_user_type)
@@ -533,23 +516,16 @@ def do_login():
 
 # Attempt the employee login
 @get('/logout')
-def do_login():
+def logout():
     response.delete_cookie('current_user')
     response.delete_cookie('current_user_type')
-    return fEngine.load_and_render("logout")
+    redirect("/")
 
 @get('/about')
 def about():
     return fEngine.load_and_render("about", garble="To be a very meme centered RTA")
 
 #-------------------------------------------------------------------------------
-
-
-
-
-
-
-
 
 
 
@@ -572,15 +548,16 @@ class WAFCaller(object):
         if response.text != "True":
             # TODO: IF TIME: Handle bad case here. Maybe strip the string of anything dodgy then return it
             # instead of just sending them to an invalid page
-            redirect('/invalid')
-
+            redirect("/templates/invalid")
+        return ""
 
     # ----------------------------------------------------------------------
 
     def response_handler(self, response):
+        print("RESPONSE: " + response)
         if response != "True":
             return response
-        return None
+        return ""
 
     # ----------------------------------------------------------------------
 
@@ -602,6 +579,9 @@ class WAFCaller(object):
         return self.response_handler(response.text)
 
 waf = WAFCaller(host_addr, waf_port)
+
+print("staff: " + hash_function("Alan"))
+print("admin: " + hash_function("John"))
 
 fEngine = FrameEngine()
 run(host=host_addr, port=frontend_port, debug=True)
