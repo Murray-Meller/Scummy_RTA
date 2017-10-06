@@ -15,8 +15,12 @@ debug = False
 def detect_attack(string_in):
     # TODO: need to scan here for any SQL injections or XSS
     if not debug:
-        if 'attack' in string_in:
-            return 'False'
+        removeChar = '"'
+        arrayOfChars = [removeChar,"'",">","<","!","/","(",")","=","{","}",":","-","&"]
+        for char in arrayOfChars:
+	        if char in string_in:
+                #string_in = string_in.replace(char, "") #remove character from string and replace it with ""
+                return 'False'
         return 'True'
     return 'False'
 
