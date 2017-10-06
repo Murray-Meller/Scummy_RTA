@@ -4,6 +4,14 @@ import re
 import numpy as np
 import string
 
+import requests
+
+
+host_addr = "localhost"
+frontend_port = 8080
+waf_port = 8081
+
+
 #TODO: temporary until cookies are used
 global current_user
 global current_user_type
@@ -131,6 +139,44 @@ def admin_reset():
     dvdb = open(destroyed_vehicle_database, 'w')
     dvdb.write("VEHICLE_ID")
     dvdb.close()
+
+def get_users_string():
+    content = ""
+    for user in users:
+        for field in user:
+            content += "| " + str(field) + " " * (25 - len(str(field))) + " "
+        content += "|\n"
+    return content
+
+def get_vehicles_string():
+    vehicle = ""
+    for car in vehicles:
+        for field in car:
+            vehicle += "| " + str(field) + " " * (20 - len(str(field))) + " "
+        vehicle += "|\n"
+    return vehicle
+
+def get_destroyed_vehicle_string():
+    destroyed = ""
+    for car in destroyed_vehicles:
+        for field in car:
+            destroyed += "| " + str(field) + " " * (10 - len(str(field))) + " "
+        destroyed += "|\n"
+    return destroyed
+
+
+# Check the login credentials
+def check_login(username, password):
+    login = False
+    password = hash_function(password)
+
+    if (username == "" or password == ""):
+        return "Incorrect, you think you could get in that easy", False
+    for user in users:
+        if user[1] == username:
+            if password == user[2]:
+                return "Success", True
+    return "Unsuccessful, try again Alan", False
 #--------------------------------------HASHING---------------------------------------
 # Adam?
 def hash_function(password):
@@ -173,9 +219,10 @@ class FrameEngine:
         template = this.load_template(filename)
         rendered_template = this.render(template, **kwargs)
         current_user = ""
+
         if request.cookies.get('current_user', '0') != '0':
             current_user = request.cookies.get('current_user', '0')
-        print("In render: " + current_user)
+
         rendered_template = this.render(this.load_template(header), NAME=current_user) + rendered_template
         rendered_template = rendered_template + this.load_template(tailer)
         return rendered_template
@@ -366,7 +413,9 @@ def check_user_type(username, hash):
 @post('/user_register')
 def do_register():
     username = request.forms.get('username')
-    password = request.forms.get('password')
+    password = request.forms.get('password
+
+
     if (register_a_person(username, password, "User")):
         return fEngine.load_and_render("user_profile", username=username)
     return fEngine.load_and_render("invalid", reason="Your username and password did not follow our guidlines. Please try again.")
@@ -377,44 +426,15 @@ def do_register():
     username = request.forms.get('username')
     password = request.forms.get('password')
     key = request.forms.get('key')
+
+    #check for any attacks in the strings
+    waf.check_email(username)
+    waf.check_password(password)
+    waf.check_attack(key)
+
+    # register them anbd if it is succesful
     if (register_an_employee(username, password, key)):
-        #set the current user to this guy
-        if (hash_function(key) == "959594a5d046a97372e94ccdcd3b3d1f"):
-            content = ""
-            for user in users:
-                for field in user:
-                    content += "| " + str(field) + " " * (25 - len(str(field))) + " "
-                content += "|\n"
-
-            vehicle = ""
-            for car in vehicles:
-                for field in car:
-                    vehicle += "| " + str(field) + " " * (20 - len(str(field))) + " "
-                vehicle += "|\n"
-            destroyed = ""
-            for car in destroyed_vehicles:
-                for field in car:
-                    destroyed += "| " + str(field) + " " * (10 - len(str(field))) + " "
-                destroyed += "|\n"
-            return fEngine.load_and_render("RTAlogin", username=username, content=content, vehicle=vehicle, destroyed=destroyed)
-        else:
-            content = ""
-            for user in users:
-                for field in user:
-                    content += "| " + str(field) + " " * (25 - len(str(field))) + " "
-                content += "|\n"
-
-            vehicle = ""
-            for car in vehicles:
-                for field in car:
-                    vehicle += "| " + str(field) + " " * (20 - len(str(field))) + " "
-                vehicle += "|\n"
-            destroyed = ""
-            for car in destroyed_vehicles:
-                for field in car:
-                    destroyed += "| " + str(field) + " " * (10 - len(str(field))) + " "
-                destroyed += "|\n"
-            return fEngine.load_and_render("RTAlogin", username=username, content=content, vehicle=vehicle,destroyed=destroyed)
+        Redirect("user_profile")
     return fEngine.load_and_render("employee_register", reason="Your username and password did not follow our guidlines. Please try again.")
 
 #-----------------------------LOGIN------------------------------------------------
@@ -441,37 +461,6 @@ def login():
     return fEngine.load_and_render("employee_login")
 
 #FUNCTIONALITY
-# Check the login credentials
-def check_login(username, password):
-    login = False
-    password = hash_function(password)
-
-
-    if (username== "" or password == ""):
-        return "Incorrect, you think you could get in that easy",False
-    for user in users:
-        if user[1] == username:
-            if password == user[2]:
-                return "Success", True
-    return "Unsuccessful, try again Alan", False
-
-# Attempt the user login
-@post('/user_login')
-def do_login():
-    username = request.forms.get('username')
-    password = request.forms.get('password')
-    err_str, login = check_login(username, password)
-
-    global current_user
-    global current_user_type
-
-    if login:
-        response.set_cookie('current_user', username)
-        response.set_cookie('current_user_type', hash_cookie(username, "User"))
-        return fEngine.load_and_render("user_profile")
-    else:
-        return fEngine.load_and_render("user_login", reason=err_str)
-
 # Attempt the employee login
 @post('/employee_login')
 def do_login():
@@ -479,8 +468,10 @@ def do_login():
     password = request.forms.get('password')
     key = request.forms.get('authentication')
 
-    global current_user
-    global current_user_type
+    # check for any attacks in the string
+    waf.check_email(username)
+    waf.check_password(password)
+    waf.check_attack(key)
 
     valid = False
     key = hash_function(key)
@@ -492,33 +483,13 @@ def do_login():
         valid = True
         employee_type = "Admin"
     else:
-        return False
+        valid = False
 
-    #TODO: it will probably need to load different pages based what kinda of staff member they are
     err_str, login = check_login(username, password)
     if login and valid:
-        # set the current user to this person
         response.set_cookie('current_user', username)
-        response.set_cookie('current_user_type', hash_cookie(username, hash_cookie(username, employee_type)))
-
-        content = ""
-        for user in users:
-            for field in user:
-                content += "| " + str(field) + " " * (25 - len(str(field))) + " "
-            content += "|\n"
-
-        vehicle = ""
-        for car in vehicles:
-            for field in car:
-                vehicle += "| " + str(field) + " " * (20 - len(str(field))) + " "
-            vehicle += "|\n"
-
-        destroyed = ""
-        for car in destroyed_vehicles:
-            for field in car:
-                destroyed += "| " + str(field) + " " * (10 - len(str(field))) + " "
-            destroyed += "|\n"
-        return fEngine.load_and_render("RTAlogin", username=username, content=content, vehicle=vehicle, destroyed=destroyed)
+        response.set_cookie('current_user_type', employee_type)
+        redirect("user_profile")
     return fEngine.load_and_render("employee_login", reason=err_str)
 
 # Attempt the user login
@@ -526,43 +497,35 @@ def do_login():
 def do_login():
     username = request.forms.get('username')
     password = request.forms.get('password')
-    err_str, login = check_login(username, password)
 
-    global current_user
-    global current_user_type
+    #check for any attacks in the username or passwords
+    waf.check_email(username)
+    waf.check_password(password)
+
+    # check the login is valid
+    err_str, login = check_login(username, password)
 
     if login:
         response.set_cookie('current_user', username)
-        response.set_cookie('current_user_type', hash_cookie(username, "User"))
-        return fEngine.load_and_render("user_profile")
+        response.set_cookie('current_user_type', "User")
+        redirect("/user_profile")
     else:
         return fEngine.load_and_render("user_login", reason=err_str)
 
-@get('/userpage')
+@get('/user_profile')
 def do_login():
     current_user = request.cookies.get('current_user', '0')
     current_user_type = request.cookies.get('current_user_type', '0')
-    current_user_type = check_user_type(current_user, current_user_type)
+
+    #check for any attacks in the cookies
+    waf.check_attack(current_user)
+    waf.check_attack(current_user_type)
+
+    #check the user and their type match
+    # FIXME: current_user_type = check_user_type(current_user, current_user_type)
 
     if current_user_type == "Staff" or current_user_type == "Admin":
-        content = ""
-        for user in users:
-            for field in user:
-                content += "| " + str(field) + " " * (25 - len(str(field))) + " "
-            content += "|\n"
-
-        vehicle = ""
-        for car in vehicles:
-            for field in car:
-                vehicle += "| " + str(field) + " " * (20 - len(str(field))) + " "
-            vehicle += "|\n"
-
-        destroyed = ""
-        for car in destroyed_vehicles:
-            for field in car:
-                destroyed += "| " + str(field) + " " * (10 - len(str(field))) + " "
-            destroyed += "|\n"
-        return fEngine.load_and_render("RTAlogin", username=current_user, content=content, vehicle=vehicle, destroyed=destroyed)
+        return fEngine.load_and_render("RTAlogin", content=get_users_string(), vehicle=get_vehicles_string(), destroyed=get_destroyed_vehicle_string())
     elif current_user_type == "User":
         return fEngine.load_and_render("user_profile")
     else:
@@ -571,25 +534,74 @@ def do_login():
 # Attempt the employee login
 @get('/logout')
 def do_login():
-    global current_user
-    global current_user_type
-
     response.delete_cookie('current_user')
     response.delete_cookie('current_user_type')
-
     return fEngine.load_and_render("logout")
 
 @get('/about')
 def about():
-    garble = ["leverage agile frameworks to provide a robust synopsis for high level overviews.",
-    "iterate approaches to corporate strategy and foster collaborative thinking to further the overall value proposition.",
-    "organically grow the holistic world view of disruptive innovation via workplace diversity and empowerment.",
-    "bring to the table win-win survival strategies to ensure proactive domination.",
-    "ensure the end of the day advancement, a new normal that has evolved from generation X and is on the runway heading towards a streamlined cloud solution.",
-    "provide user generated content in real-time will have multiple touchpoints for offshoring."]
-    return fEngine.load_and_render("about", garble=np.random.choice(garble))
+    return fEngine.load_and_render("about", garble="To be a very meme centered RTA")
 
-#-----------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+class WAFCaller(object):
+    def __init__(self, waf_address, waf_port):
+        self.waf_port = waf_port
+        self.waf_address = waf_address
+        self.waf_string = "http://{address}:{port}".format(address=waf_address, port=waf_port)
+
+    # --------------------------------------------------------------------------
+
+    # Ideally every string sent to the server should first pass through the WAF
+    # this is for general use: The attack vector is just the string that we want to parse.
+    def check_attack(self, attack_vector):
+        # Check for malicious code by sending vector to the waf server
+        response = requests.post("{target}/waf/detect/{attack_vector}".format(target=self.waf_string, attack_vector=attack_vector))
+
+        # Rather than redirecting, you can attempt to sanitise the string
+        if response.text != "True":
+            # TODO: IF TIME: Handle bad case here. Maybe strip the string of anything dodgy then return it
+            # instead of just sending them to an invalid page
+            redirect('/invalid')
+
+
+    # ----------------------------------------------------------------------
+
+    def response_handler(self, response):
+        if response != "True":
+            return response
+        return None
+
+    # ----------------------------------------------------------------------
+
+    def check_email(self, email):
+        # Check string for any attack
+        self.check_attack(email)
+
+        # Call the waf and check whether it is a valid email
+        response = requests.post("{target}/waf/email/{email}".format(target=self.waf_string, email=email))
+        return self.response_handler(response.text)
+
+    def check_password(self, password):
+        # Check string for any attack
+        self.check_attack(password)
+
+        # Check parsing format of the password
+        response = requests.post("{target}/waf/password/{password}".format(target=self.waf_string, password=password))
+
+        return self.response_handler(response.text)
+
+waf = WAFCaller(host_addr, waf_port)
 
 fEngine = FrameEngine()
-run(host='localhost', port=8080, debug=True)
+run(host=host_addr, port=frontend_port, debug=True)

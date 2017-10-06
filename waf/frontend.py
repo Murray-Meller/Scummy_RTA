@@ -19,49 +19,55 @@ class WAFCaller(object):
     # ----------------------------------------------------------------------
 
     # Ideally every string sent to the server should first pass through the WAF
+    # this is for general use: The attack vector is just the string that we want to parse.
     def check_attack(self, attack_vector):
-        # Check for malicious code
+        # Check for malicious code by sending vector to the waf server
         response = requests.post("{target}/waf/detect/{attack_vector}".format(target=self.waf_string, attack_vector=attack_vector))
 
         # Rather than redirecting, you can attempt to sanitise the string
         if response.text != "True":
-            #TODO: Test for invlaid string - strip
+            # TODO: IF TIME: Handle bad case here. Maybe strip the string of anything dodgy then return it
+            # instead of just sending them to an invalid page
             redirect('/invalid')
+
 
     # ----------------------------------------------------------------------
 
     def response_handler(self, response):
         if response != "True":
-            #TODO: Test for invlaid string - strip
             return response
         return None
 
     # ----------------------------------------------------------------------
 
     def check_email(self, email):
-        # Check for attack strings
+        # Check string for any attack
         self.check_attack(email)
 
-        # Call the waf
+        # Call the waf and check whether it is a valid email
         response = requests.post("{target}/waf/email/{email}".format(target=self.waf_string, email=email))
         return self.response_handler(response.text)
 
     def check_password(self, password):
-        # Check for attack strings
+        # Check string for any attack
         self.check_attack(password)
 
-        # Check parsing format
+        # Check parsing format of the password
         response = requests.post("{target}/waf/password/{password}".format(target=self.waf_string, password=password))
 
         return self.response_handler(response.text)
 
 #-----------------------------------------------------------------
 
+# THE FOLLOWING CODE IS JUST A MOCK WEBSITE HE MADE.
+# ALL WE WILL DO IS EVENTUALLY MOVE THE ABOVE CLASS INTO OUR MAIN FILE
+
 # Potential attack string detected
 @get('/invalid')
 def defuse():
     return '''
-        You attempted to pass an invalid input
+        You attempted to pass an invalid input that contained a potential threat to this site.
+        Please refrain from using any special characters.
     '''
 
 #-----------------------------------------------------------------

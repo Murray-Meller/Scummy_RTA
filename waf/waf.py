@@ -13,6 +13,7 @@ debug = False
 
 @post('/waf/detect/<string_in:path>')
 def detect_attack(string_in):
+    # TODO: need to scan here for any SQL injections or XSS
     if not debug:
         if 'attack' in string_in:
             return 'False'
@@ -37,6 +38,9 @@ def verify_password(password):
     if not any(c in string.ascii_uppercase for c in password):
         return "Password must contain at least one uppercase character"
 
+    if not any(c in string.digits for c in password):
+        return "Password must contain at least one digit"
+
     return 'True'
 
 # Rather than using paths, you could throw all the requests with form data filled using the
@@ -50,6 +54,7 @@ def custom_waf(field, test):
     return "False"
 
 # Debug toggle
+# TODO: remove this for final version as ALAN could call it to put it into debug mode
 @post('/waf/debug')
 def enable_debugger():
     global debug
