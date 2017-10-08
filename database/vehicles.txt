@@ -3,3 +3,4 @@ USER_ID,VEHICLE_ID,FINES,DEMERITS
 x,s,d,f
 ,,,
 a,s,d,f
+2,0,2,0
