@@ -13,14 +13,11 @@ debug = False
 
 @post('/waf/detect/<string_in:path>')
 def detect_attack(string_in):
-    # TODO: need to scan here for any SQL injections or XSS
     if not debug:
         arrayOfChars = ['"',"'",">","<","!","/","(",")","=","{","}",":","-","&"]
-        print("Checking string: " + string_in)
         for char in arrayOfChars:
             if char in string_in:
                 #string_in = string_in.replace(char, "") #remove character from string and replace it with ""
-                print("Found an illegal char")
                 return "False"
         return "True"
     return "False"

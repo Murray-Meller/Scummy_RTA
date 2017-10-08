@@ -579,12 +579,11 @@ class WAFCaller(object):
     def check_attack(self, attack_vector):
         # Check for malicious code by sending vector to the waf server
         response = requests.post("{target}/waf/detect/{attack_vector}".format(target=self.waf_string, attack_vector=attack_vector))
-        print("Affter checkign for an attack i got this: " + response.text)
         # Rather than redirecting, you can attempt to sanitise the string
         if response.text != "True":
             # TODO: IF TIME: Handle bad case here. Maybe strip the string of anything dodgy then return it
             # instead of just sending them to an invalid page
-            redirect("invalid")
+            redirect("/invalid")
         return ""
 
     # ----------------------------------------------------------------------
