@@ -18,7 +18,7 @@ def detect_attack(string_in):
         removeChar = '"'
         arrayOfChars = [removeChar,"'",">","<","!","/","(",")","=","{","}",":","-","&"]
         for char in arrayOfChars:
-	        if char in string_in:
+            if char in string_in:
                 #string_in = string_in.replace(char, "") #remove character from string and replace it with ""
                 return 'False'
         return 'True'

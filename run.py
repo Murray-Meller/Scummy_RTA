@@ -185,6 +185,7 @@ def check_user_type(username, said_type):
     for user in users:
         if user[1] == username:
             if user[3] == said_type:
+                print("Found user match. Has type: " + user[3])
                 return True
     return False
 
@@ -326,16 +327,34 @@ def compute_license():
 #loads up register page
 @get('/register')
 def register():
+    # check if already logged in
+    current_user = request.cookies.get('current_user', '0')
+    current_user_type = request.cookies.get('current_user_type', '0')
+    if (current_user != "0" and current_user_type != "0"):
+        redirect("/user_profile")
+
     return fEngine.load_and_render('pre_register')
 
 # Display the users register page
 @get('/user_register')
 def register():
+    # check if already logged in
+    current_user = request.cookies.get('current_user', '0')
+    current_user_type = request.cookies.get('current_user_type', '0')
+    if (current_user != "0" and current_user_type != "0"):
+        redirect("/user_profile")
+
     return fEngine.load_and_render("user_register")
 
 # Display the employees register page
 @get('/employee_register')
 def register():
+    # check if already logged in
+    current_user = request.cookies.get('current_user', '0')
+    current_user_type = request.cookies.get('current_user_type', '0')
+    if (current_user != "0" and current_user_type != "0"):
+        redirect("/user_profile")
+
     return fEngine.load_and_render("employee_register")
 
 # FUNCTIONALITY - Muzz and Euan and Adam
@@ -424,19 +443,34 @@ def index():
 # Display the login page
 @get('/login')
 def login():
-    #TODO: check if already logged in
+    # check if already logged in
+    current_user = request.cookies.get('current_user', '0')
+    current_user_type = request.cookies.get('current_user_type', '0')
+    if (current_user != "0" and current_user_type != "0"):
+        redirect("/user_profile")
+
     return fEngine.load_and_render("pre_login")
 
 # Display the users login page
 @get('/user_login')
 def login():
-    #TODO: check if already logged in
+    # check if already logged in
+    current_user = request.cookies.get('current_user', '0')
+    current_user_type = request.cookies.get('current_user_type', '0')
+    if (current_user != "0" and current_user_type != "0"):
+        redirect("/user_profile")
+
     return fEngine.load_and_render("user_login")
 
 # Display the employees login page
 @get('/employee_login')
 def login():
-    #TODO: check if already logged in
+    # check if already logged in
+    current_user = request.cookies.get('current_user', '0')
+    current_user_type = request.cookies.get('current_user_type', '0')
+    if (current_user != "0" and current_user_type != "0"):
+        redirect("/user_profile")
+
     return fEngine.load_and_render("employee_login")
 
 #FUNCTIONALITY
@@ -458,7 +492,7 @@ def do_login():
     employee_type = get_employee_type(key)
 
     err_str, validLogin = check_login(username, password)
-    if employee_type != None and validLogin:
+    if check_user_type(username, employee_type) and validLogin:
         response.set_cookie('current_user', username)
         response.set_cookie('current_user_type', employee_type)
         redirect("/user_profile")
@@ -504,7 +538,8 @@ def do_login():
         return fEngine.load_and_render("invalid", reason=reply)
 
     #check the user and their type match
-    if (check_user_type(current_user, current_user_type)):
+    print("Read in values: " + current_user + " " + current_user_type)
+    if (not check_user_type(current_user, current_user_type)):
         return fEngine.load_and_render("invalid", reason="There is an issue with you and your cookies")
 
     if current_user_type == "Staff" or current_user_type == "Admin":
@@ -545,7 +580,7 @@ class WAFCaller(object):
         if response.text != "True":
             # TODO: IF TIME: Handle bad case here. Maybe strip the string of anything dodgy then return it
             # instead of just sending them to an invalid page
-            redirect("/templates/invalid")
+            return self.response_handler(response.text)
         return ""
 
     # ----------------------------------------------------------------------
