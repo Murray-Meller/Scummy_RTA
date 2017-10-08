@@ -15,14 +15,15 @@ debug = False
 def detect_attack(string_in):
     # TODO: need to scan here for any SQL injections or XSS
     if not debug:
-        removeChar = '"'
-        arrayOfChars = [removeChar,"'",">","<","!","/","(",")","=","{","}",":","-","&"]
+        arrayOfChars = ['"',"'",">","<","!","/","(",")","=","{","}",":","-","&"]
+        print("Checking string: " + string_in)
         for char in arrayOfChars:
             if char in string_in:
                 #string_in = string_in.replace(char, "") #remove character from string and replace it with ""
-                return 'False'
-        return 'True'
-    return 'False'
+                print("Found an illegal char")
+                return "False"
+        return "True"
+    return "False"
 
 @post('/waf/email/<email:path>')
 def verify_email(email):
