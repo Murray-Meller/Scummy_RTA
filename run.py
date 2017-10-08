@@ -578,6 +578,9 @@ class WAFCaller(object):
     # this is for general use: The attack vector is just the string that we want to parse.
     def check_attack(self, attack_vector):
         # Check for malicious code by sending vector to the waf server
+        if attack_vector == "":
+            return ""
+
         response = requests.post("{target}/waf/detect/{attack_vector}".format(target=self.waf_string, attack_vector=attack_vector))
         # Rather than redirecting, you can attempt to sanitise the string
         if response.text != "True":
@@ -596,6 +599,9 @@ class WAFCaller(object):
     # ----------------------------------------------------------------------
 
     def check_email(self, email):
+        if email == "":
+            return ""
+
         # Check string for any attack
         self.check_attack(email)
 
@@ -604,6 +610,9 @@ class WAFCaller(object):
         return self.response_handler(response.text)
 
     def check_password(self, password):
+        if password == "":
+            return ""
+
         # Check string for any attack
         self.check_attack(password)
 
