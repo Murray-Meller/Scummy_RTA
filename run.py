@@ -12,13 +12,10 @@ import requests
 host_addr = "localhost"
 frontend_port = 8080
 waf_port = 8081
+backend_port = 8082
 
+backend_str = "http://{host}:{port}".format(host=host_addr, port=backend_port)
 
-#TODO: temporary until cookies are used
-global current_user
-global current_user_type
-current_user = ""
-current_user_type = ""
 #----------------------------DATABASE-STUFF-------------------------------------
 users = [] #array of users
 vehicles = [] #array of vehicles
@@ -31,6 +28,18 @@ destroyed_vehicle_database = './database/destroyed_vehicles.txt'
 user_database_num_fields = 6
 vehicle_database_num_fields = 4
 destroyed_vehicle_database_num_fields = 1
+
+def load_database(location):
+    db = []
+    response = requests.post("{target}/api/{location}get/all"
+    	.format(target=backend_str, location=location))
+    textdb = response.text.splitlines()
+    for line in textdb:
+        line = line.split(',')
+        line[-1] = line[-1][:-1]
+        db.append(line)
+    print(db)
+    return db
 
 # Updates the 'Users' array to store all the contents of the file
 # DONE: Muzz and Euan
@@ -143,28 +152,19 @@ def admin_reset():
     dvdb.close()
 
 def get_users_string():
-    content = ""
-    for user in users:
-        for field in user:
-            content += "| " + str(field) + " " * (25 - len(str(field))) + " "
-        content += "|\n"
-    return content
+    response = requests.post("{target}/api/userstring"
+    	.format(target=backend_str))
+    return response.text
 
 def get_vehicles_string():
-    vehicle = ""
-    for car in vehicles:
-        for field in car:
-            vehicle += "| " + str(field) + " " * (20 - len(str(field))) + " "
-        vehicle += "|\n"
-    return vehicle
+    response = requests.post("{target}/api/vehiclestring"
+    	.format(target=backend_str))
+    return response.text
 
 def get_destroyed_vehicle_string():
-    destroyed = ""
-    for car in destroyed_vehicles:
-        for field in car:
-            destroyed += "| " + str(field) + " " * (10 - len(str(field))) + " "
-        destroyed += "|\n"
-    return destroyed
+    response = requests.post("{target}/api/destroyedstring"
+    	.format(target=backend_str))
+    return response.text
 
 
 # Check the login credentials
@@ -172,13 +172,15 @@ def check_login(username, password):
     login = False
     password = hash_function(password)
 
-    if (username == "" or password == ""):
-        return "Incorrect, you think you could get in that easy", False
-    for user in users:
-        if user[1] == username:
-            if password == user[2]:
-                return "Success", True
-    return "Unsuccessful, try again Alan", False
+    response = requests.post("{target}/api/usercheck/{username}/{password}"
+    	.format(target=backend_str, username=username, password=password))
+
+    result = response.text
+
+    if result[-4:] == 'True':
+        return "Success", True
+    else:
+        return result[:-6], False
 
 # Checks if the cookie matches their user type - TODO: found a bug
 def check_user_type(username, said_type):

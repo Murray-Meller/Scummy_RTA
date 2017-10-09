@@ -46,4 +46,10 @@ def test2get():
     	.format(target=backend_str))
     return response.text
 
+@get('/test3')
+def test3get():
+    response = requests.post("{target}/api/userstring"
+    	.format(target=backend_str))
+    return response.text
+
 run(host=host_addr, port=frontend_port)

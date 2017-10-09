@@ -19,13 +19,15 @@ vehicle_database_num_fields = 4
 destroyed_vehicle_database_num_fields = 1
 
 def load_users():
-    udb = open(user_database, 'r')
-    for line in udb:
-        line = line.split(',')
-        line[-1] = line[-1][:-1]
-        users.append(line)
-    udb.close()
-    return users
+	global users
+	users = []
+	udb = open(user_database, 'r')
+	for line in udb:
+		line = line.split(',')
+		line[-1] = line[-1][:-1]
+		users.append(line)
+	udb.close()
+	return users
 
 def save_users():
     udb = open(user_database, 'w')
@@ -42,14 +44,15 @@ def save_users():
     udb.close()
 
 def load_vehicles():
-    vdb = open(vehicle_database, 'r')
-    for line in vdb:
-        line = line.split(',')
-        line[-1] = line[-1][:-1]
-        vehicles.append(line)
-    vdb.close()
-
-    return vehicles
+	global vehicles
+	vehicles = []
+	vdb = open(vehicle_database, 'r')
+	for line in vdb:
+		line = line.split(',')
+		line[-1] = line[-1][:-1]
+		vehicles.append(line)
+	vdb.close()
+	return vehicles
 
 def save_vehicles():
     vdb = open(vehicle_database, 'w')
@@ -66,13 +69,15 @@ def save_vehicles():
     vdb.close()
 
 def load_destroyed_vehicles():
-    dvdb = open(destroyed_vehicle_database, 'r')
-    for line in dvdb:
-        line = line.split(',')
-        line[-1] = line[-1][:-1]
-        destroyed_vehicles.append(line)
-    dvdb.close()
-    return destroyed_vehicles
+	global destroyed_vehicles
+	destroyed_vehicles = []
+	dvdb = open(destroyed_vehicle_database, 'r')
+	for line in dvdb:
+		line = line.split(',')
+		line[-1] = line[-1][:-1]
+		destroyed_vehicles.append(line)
+	dvdb.close()
+	return destroyed_vehicles
 
 def save_destroyed_vehicles():
     dvdb = open(destroyed_vehicle_database, 'w')
@@ -143,6 +148,28 @@ def usergetall():
 			r_string += user
 	return r_string
 
+@post('/api/usercheck/<username:path>/<password:path>')
+def check_login(username, password):
+	load_users()
+	if (username == "" or password == ""):
+		return "Incorrect, you think you could get in that easy False"
+	for user in users:
+		if user[1] == username:
+			if password == user[2]:
+				return "Success True"
+	return "Unsuccessful, try again Alan False"
+
+@post('/api/userstring')
+def get_users_string():
+	load_users()
+	content = ""
+	for user in users:
+	    for field in user:
+	        content += "| " + str(field) + " " * (25 - len(str(field))) + " "
+	    content += "|\n"
+	print(users)
+	return content
+
 @post('/api/vehicleadd/<vehicle:path>')
 def vehicleadd(vehicle):
 	load_vehicles()
@@ -163,6 +190,16 @@ def vehiclegetall():
 			r_string += car
 	return r_string
 
+@post('/api/vehiclestring')
+def get_vehicles_string():
+	load_vehicles()
+	vehicle = ""
+	for car in vehicles:
+	    for field in car:
+	        vehicle += "| " + str(field) + " " * (20 - len(str(field))) + " "
+	    vehicle += "|\n"
+	return vehicle
+
 # TODO: currently no way to add destroyed car in frontend
 # @post('/api/destroyedadd/<destroyed:path>')
 # def destroyedadd(destroyed):
@@ -182,6 +219,16 @@ def destroyedgetall():
 		if count != 1:
 			r_string += car
 	return r_string
+
+@post('/api/destroyedstring')
+def get_destroyed_vehicle_string():
+	load_destroyed_vehicles()
+	destroyed = ""
+	for car in destroyed_vehicles:
+		for field in car:
+			destroyed += "| " + str(field) + " " * (10 - len(str(field))) + " "
+		destroyed += "|\n"
+	return destroyed
 
 # Rather than using paths, you could throw all the requests with form data filled using the
 # requests module and extract it here.
