@@ -9,6 +9,7 @@ port = "8082"
 users = []
 vehicles = []
 destroyed_vehicles = []
+session_ids = []
 
 user_database = './database/users.txt'
 vehicle_database = './database/vehicles.txt'
@@ -104,6 +105,32 @@ def save_database():
     save_destroyed_vehicles()
 
 # API calls
+@post('/api/session_id/new/<username:path>')
+def session_id_new(username):
+	load_users()
+	user_exists = False
+	person_type = ""
+	for user in users:
+		if user[1] == username:
+			user_exists = True
+			person_type = user[3]
+			break
+	if !user_exists:
+		return "Not a user False"
+	global session_ids
+	id = ''.join(random.SystemRandom().choice(string.ascii_lowercase + string.digits) for i in range(12))
+	session_ids.append([username, id, person_type])
+	print (session_ids)
+	return id
+
+@post('/api/session_id/<username:path>/<session_id:path>')
+def session_id_get(username, session_id):
+	for user in session_ids:
+		if user[0] == username and user[1] == session_id:
+			return user[2]
+	return "Invalid Cookies"
+
+
 @post('/api/useradd/<username:path>/<password:path>/<persontype:path>')
 def useradd(username, password, persontype):
 	load_users()
