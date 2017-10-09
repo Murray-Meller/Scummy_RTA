@@ -12,159 +12,43 @@ import requests
 host_addr = "localhost"
 frontend_port = 8080
 waf_port = 8081
+backend_port = 8082
 
+backend_str = "http://{host}:{port}".format(host=host_addr, port=backend_port)
 
-#TODO: temporary until cookies are used
-global current_user
-global current_user_type
-current_user = ""
-current_user_type = ""
 #----------------------------DATABASE-STUFF-------------------------------------
-users = [] #array of users
-vehicles = [] #array of vehicles
-destroyed_vehicles = [] #array of destoryed_vehicles
 
-user_database = './database/users.txt'
-vehicle_database = './database/vehicles.txt'
-destroyed_vehicle_database = './database/destroyed_vehicles.txt'
-
-user_database_num_fields = 6
-vehicle_database_num_fields = 4
-destroyed_vehicle_database_num_fields = 1
-
-# Updates the 'Users' array to store all the contents of the file
-# DONE: Muzz and Euan
-def load_users():
-    udb = open(user_database, 'r')
-    for line in udb:
+# loads a given database from the backend and returns an array
+def load_database(location):
+    db = []
+    response = requests.post("{target}/api/{location}get/all"
+    	.format(target=backend_str, location=location))
+    textdb = response.text.splitlines()
+    for line in textdb:
         line = line.split(',')
         line[-1] = line[-1][:-1]
-        users.append(line)
-    udb.close()
-    return users
-
-# Only use in when to save the whole 'Users' array to the csv file
-# DONE: Muzz and Euan
-def save_users():
-    udb = open(user_database, 'w')
-    for user in users:
-        count = 0
-        for field in user:
-            udb.write(str(field))
-            count += 1
-            if count != user_database_num_fields:
-                udb.write(',')
-        for i in range(user_database_num_fields - (count + 1)):
-            udb.write(',')
-        udb.write('\n')
-    udb.close()
-
-# loads in the vehicles file into a global array called vehicles,
-# see vehciles.txt file for column detailsz
-# Muzz
-def load_vehicles():
-    vdb = open(vehicle_database, 'r')
-    for line in vdb:
-        line = line.split(',')
-        line[-1] = line[-1][:-1]
-        vehicles.append(line)
-    vdb.close()
-
-    return vehicles
-
-# saves the global array vehicles to the file
-# should be called whenever you change a value in the array. (lame i know, but it works)
-# Muzz
-def save_vehicles():
-    vdb = open(vehicle_database, 'w')
-    for vehicle in vehicles:
-        count = 0
-        for field in vehicle:
-            vdb.write(str(field))
-            count += 1
-            if count != vehicle_database_num_fields:
-                vdb.write(',')
-        for i in range(vehicle_database_num_fields - (count + 1)):
-            vdb.write(',')
-        vdb.write('\n')
-    vdb.close()
-
-# loads in the destroyed_vehicles file into a global array called destroyed_vehicles,
-# see destroyed_vehciles.txt file for column details
-# Muzz
-def load_destroyed_vehicles():
-    dvdb = open(destroyed_vehicle_database, 'r')
-    for line in dvdb:
-        line = line.split(',')
-        line[-1] = line[-1][:-1]
-        destroyed_vehicles.append(line)
-    dvdb.close()
-    return destroyed_vehicles
-
-# saves the global array destroyed_vehicles to the file
-# should be called whenever you change a value in the array. (lame i know, but it works)
-# Muzz
-def save_destroyed_vehicles():
-    dvdb = open(destroyed_vehicle_database, 'w')
-    for vehicle in destroyed_vehicles:
-        count = 0
-        for field in vehicle:
-            dvdb.write(str(field))
-            count += 1
-            if count != destroyed_vehicle_database_num_fields:
-                dvdb.write(',')
-        for i in range(destroyed_vehicle_database_num_fields - (count + 1)):
-            dvdb.write(',')
-        dvdb.write('\n')
-    dvdb.close()
-
-# Muzz
-def load_database():
-    load_users()
-    load_vehicles()
-    load_destroyed_vehicles()
-
-# Muzz
-def save_database():
-    save_users()
-    save_vehicles()
-    save_destroyed_vehicles()
+        db.append(line)
+    return db
 
 # Muz -- TODO: will use to allow for an admin reset
 def admin_reset():
-    dvdb = open(user_database, 'w')
-    dvdb.write("ID,NAME,HASHED PASSWORD,LEVEL,LICENSE,LICENSE_EXPIRY\n")
-    dvdb.close()
-    dvdb = open(vehicle_database, 'w')
-    dvdb.write("USER_ID,VEHICLE_ID,FINES,DEMERITS\n")
-    dvdb.close()
-    dvdb = open(destroyed_vehicle_database, 'w')
-    dvdb.write("VEHICLE_ID")
-    dvdb.close()
+    requests.post("{target}/api/adminreset"
+        .format(target=backend_str))
 
 def get_users_string():
-    content = ""
-    for user in users:
-        for field in user:
-            content += "| " + str(field) + " " * (25 - len(str(field))) + " "
-        content += "|\n"
-    return content
+    response = requests.post("{target}/api/userstring"
+    	.format(target=backend_str))
+    return response.text
 
 def get_vehicles_string():
-    vehicle = ""
-    for car in vehicles:
-        for field in car:
-            vehicle += "| " + str(field) + " " * (20 - len(str(field))) + " "
-        vehicle += "|\n"
-    return vehicle
+    response = requests.post("{target}/api/vehiclestring"
+    	.format(target=backend_str))
+    return response.text
 
 def get_destroyed_vehicle_string():
-    destroyed = ""
-    for car in destroyed_vehicles:
-        for field in car:
-            destroyed += "| " + str(field) + " " * (10 - len(str(field))) + " "
-        destroyed += "|\n"
-    return destroyed
+    response = requests.post("{target}/api/destroyedstring"
+    	.format(target=backend_str))
+    return response.text
 
 
 # Check the login credentials
@@ -172,16 +56,19 @@ def check_login(username, password):
     login = False
     password = hash_function(password)
 
-    if (username == "" or password == ""):
-        return "Incorrect, you think you could get in that easy", False
-    for user in users:
-        if user[1] == username:
-            if password == user[2]:
-                return "Success", True
-    return "Unsuccessful, try again Alan", False
+    response = requests.post("{target}/api/usercheck/{username}/{password}"
+    	.format(target=backend_str, username=username, password=password))
+
+    result = response.text
+
+    if result[-4:] == 'True':
+        return "Success", True
+    else:
+        return result[:-6], False
 
 # Checks if the cookie matches their user type - TODO: found a bug
 def check_user_type(username, said_type):
+    users = load_database('user')
     for user in users:
         if user[1] == username:
             if user[3] == said_type:
@@ -206,7 +93,6 @@ class FrameEngine:
         this.template_path = template_path
         this.template_extension = template_extension
         this.global_renders = kwargs
-        load_database()
 
     def load_template(this, filename):
         path = this.template_path + filename + this.template_extension
@@ -267,8 +153,8 @@ def check_register_vehicle(vehicle):
 @post('/register_vehicle')
 def do_vehicle_registration():
     vehicle_registration_number = str(request.forms.get('number'))
-    vehicles.append(vehicle_registration_number);
-    save_vehicles()
+    requests.post("{target}/api/vehicleadd/{vehicle}"
+    	.format(target=backend_str, vehicle=vehicle_registration_number))
     return check_register_vehicle(vehicle_registration_number)
 
 #----------------------------------Manage vehicle-------------------------------
@@ -379,16 +265,14 @@ def register_a_person(username, password, person_type):
     if (username=="" or " " in username or password ==""):
         return False
 
-    #Check username avaiability
-    for u in users:
-        if (str(u[1]) == username):
-            return False
-
     password = hash_function(password)
-    users.append([len(users),username,password,person_type,"",""]) #TODO: fix ID: should use a global static variable
-    save_users()
 
-    return True
+    response = requests.post("{target}/api/useradd/{username}/{password}/{persontype}"
+    	.format(target=backend_str, username=username, password=password, persontype=person_type))
+
+    if response.text == 'True':
+        return True
+    return False
 
 @post('/user_register')
 def user_register():
