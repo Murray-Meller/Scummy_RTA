@@ -103,17 +103,6 @@ def save_database():
     save_vehicles()
     save_destroyed_vehicles()
 
-def admin_reset():
-    dvdb = open(user_database, 'w')
-    dvdb.write("ID,NAME,HASHED PASSWORD,LEVEL,LICENSE,LICENSE_EXPIRY\n")
-    dvdb.close()
-    dvdb = open(vehicle_database, 'w')
-    dvdb.write("USER_ID,VEHICLE_ID,FINES,DEMERITS\n")
-    dvdb.close()
-    dvdb = open(destroyed_vehicle_database, 'w')
-    dvdb.write("VEHICLE_ID")
-    dvdb.close()
-
 # API calls
 @post('/api/useradd/<username:path>/<password:path>/<persontype:path>')
 def useradd(username, password, persontype):
@@ -121,10 +110,10 @@ def useradd(username, password, persontype):
 	global users
 	for user in users:
 		if user[1] == username:
-			return "User already exists"
+			return "False"
 	users.append([len(users),username,password,persontype,"",""])
 	save_users()
-	return "User added"
+	return "True"
 
 @post('/api/userget/<username:path>')
 def userget(username):
@@ -167,8 +156,20 @@ def get_users_string():
 	    for field in user:
 	        content += "| " + str(field) + " " * (25 - len(str(field))) + " "
 	    content += "|\n"
-	print(users)
 	return content
+
+@post('/api/adminreset')
+def admin_reset():
+	dvdb = open(user_database, 'w')
+	dvdb.write("ID,NAME,HASHED PASSWORD,LEVEL,LICENSE,LICENSE_EXPIRY\n")
+	dvdb.close()
+	dvdb = open(vehicle_database, 'w')
+	dvdb.write("USER_ID,VEHICLE_ID,FINES,DEMERITS\n")
+	dvdb.close()
+	dvdb = open(destroyed_vehicle_database, 'w')
+	dvdb.write("VEHICLE_ID\n")
+	dvdb.close()
+	load_database()
 
 @post('/api/vehicleadd/<vehicle:path>')
 def vehicleadd(vehicle):
