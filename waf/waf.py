@@ -11,8 +11,9 @@ port = "8081"
 # Debug should be set to false when launching the final version
 debug = False
 
+@post('/waf/detect/')
 @post('/waf/detect/<string_in:path>')
-def detect_attack(string_in):
+def detect_attack(string_in=""):
     if not debug:
         arrayOfChars = ['"',"'",">","<","!","/","(",")","=","{","}",":","-","&"]
         for char in arrayOfChars:
@@ -22,15 +23,17 @@ def detect_attack(string_in):
         return "True"
     return "False"
 
+@post('/waf/email/')
 @post('/waf/email/<email:path>')
-def verify_email(email):
+def verify_email(email=""):
     if '@' in email:
         return 'True'
     else:
         return "Not an email address"
 
+@post("/waf/password/")
 @post('/waf/password/<password:path>')
-def verify_password(password):
+def verify_password(password=""):
     print(len(password))
     if len(password) < 8:
         return "Password is too short"
