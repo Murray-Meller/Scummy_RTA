@@ -58,7 +58,6 @@ def check_login(username, password):
 
     response = requests.post("{target}/api/usercheck/{username}/{password}"
     	.format(target=backend_str, username=username, password=password))
-
     result = response.text
 
     if result[-4:] == 'True':
@@ -377,8 +376,10 @@ def do_login():
 
     err_str, validLogin = check_login(username, password)
     if check_user_type(username, employee_type) and validLogin:
+        session_id = requests.post("{target}/api/session_id/new/{username}"
+            .format(target=backend_str, username=username)).text
         response.set_cookie('current_user', username)
-        response.set_cookie('current_user_type', employee_type)
+        response.set_cookie('current_user_type', session_id)
         redirect("/user_profile")
     return fEngine.load_and_render("employee_login", reason=err_str)
 
@@ -399,8 +400,10 @@ def do_login():
     err_str, valid_login = check_login(username, password)
 
     if valid_login and check_user_type(username, "User"):
+        session_id = requests.post("{target}/api/session_id/new/{username}"
+            .format(target=backend_str, username=username)).text
         response.set_cookie('current_user', username)
-        response.set_cookie('current_user_type', "User")
+        response.set_cookie('current_user_type', session_id)
         redirect("/user_profile")
     else:
         return fEngine.load_and_render("user_login", reason=err_str)
@@ -408,23 +411,27 @@ def do_login():
 @get('/user_profile')
 def do_login():
     current_user = request.cookies.get('current_user', '0')
-    current_user_type = request.cookies.get('current_user_type', '0')
+    session_id = request.cookies.get('current_user_type', '0')
 
     #TODO: check if cookies are empty in which case load the index
-    if (current_user == "0" or current_user_type == "0"):
+    if (current_user == "0" or session_id == "0"):
         return fEngine.load_and_render("index")
 
     #check for any attacks in the cookies
     reply = ""
     reply += waf.check_email(current_user)
-    reply += waf.check_attack(current_user_type)
+    reply += waf.check_attack(session_id)
     if (reply != ""):
         return fEngine.load_and_render("invalid", reason=reply)
 
     #check the user and their type match
-    print("Read in values: " + current_user + " " + current_user_type)
-    if (not check_user_type(current_user, current_user_type)):
+    print("Read in values: " + current_user + " " + session_id)
+    response = requests.post("{target}/api/session_id/get/{username}/{session_id}"
+        .format(target=backend_str, username=current_user, session_id=session_id))
+    if (response.text == "Invalid Cookies"):
         return fEngine.load_and_render("invalid", reason="There is an issue with you and your cookies")
+
+    current_user_type = response.text
 
     if current_user_type == "Staff" or current_user_type == "Admin":
         return fEngine.load_and_render("RTAlogin", content=get_users_string(), vehicle=get_vehicles_string(), destroyed=get_destroyed_vehicle_string())
@@ -436,6 +443,10 @@ def do_login():
 # Attempt the employee login
 @get('/logout')
 def logout():
+    username = request.cookies.get('current_user', '0')
+    session_id = request.cookies.get('current_user_type', '0')
+    requests.post('{target}/api/session_id/logout/{username}/{session_id}'
+        .format(target=backend_str, username=username, session_id=session_id))
     response.delete_cookie('current_user')
     response.delete_cookie('current_user_type')
     redirect("/")
