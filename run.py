@@ -153,6 +153,12 @@ def check_register_vehicle(vehicle):
 @post('/register_vehicle')
 def do_vehicle_registration():
     vehicle_registration_number = str(request.forms.get('number'))
+
+    reply = ""
+    reply += waf.check_rego(vehicle_registration_number)
+    if (reply != ""):
+        return fEngine.load_and_render("invalid", reason=reply)
+
     requests.post("{target}/api/vehicleadd/{vehicle}"
     	.format(target=backend_str, vehicle=vehicle_registration_number))
     return check_register_vehicle(vehicle_registration_number)
@@ -189,22 +195,22 @@ def compute_license():
 
     #compute whether they want to apply or renew
     #if applying will return Applying if renewing will return Renewing.
-    application = request.forms.get('param', '')
-    aplitcation = str(application)
-    file = open(database, 'r')
-
-    #TODO this is a basic check for if user is already applied etc...what needs to be done is correctly correlate this to the right user.
-    if (application == "Applying" and ("Unlicensed" not in file)):
-        file.close()
-        return fEngine.load_and_render("invalid", reason="You already have a license or are applying for one.")
-    elif (application == "Renewing" and ("Licensed" not in file)):
-        file.close()
-        return fEngine.load_and_render('invalid', reason="You are unlicensed or are applying for a license")
-    elif (application == "Applying"):
-        #TODO add to database
-        return fEngine.load_and_render('user_profile')
-    elif (application == "Renewing"):
-        return fEngine.load_and_render('user_profile')
+    # application = request.forms.get('param', '')
+    # aplitcation = str(application)
+    # file = open(database, 'r')
+    #
+    # #TODO this is a basic check for if user is already applied etc...what needs to be done is correctly correlate this to the right user.
+    # if (application == "Applying" and ("Unlicensed" not in file)):
+    #     file.close()
+    #     return fEngine.load_and_render("invalid", reason="You already have a license or are applying for one.")
+    # elif (application == "Renewing" and ("Licensed" not in file)):
+    #     file.close()
+    #     return fEngine.load_and_render('invalid', reason="You are unlicensed or are applying for a license")
+    # elif (application == "Applying"):
+    #     #TODO add to database
+    #     return fEngine.load_and_render('user_profile')
+    # elif (application == "Renewing"):
+    #     return fEngine.load_and_render('user_profile')
     #TODO sends this data to the database, if licensed is renewed will not update or if already has license cannot apply.
     return fEngine.load_and_render('user_profile')
 
@@ -496,6 +502,16 @@ class WAFCaller(object):
         response = requests.post("{target}/waf/password/{password}".format(target=self.waf_string, password=password))
 
         return self.response_handler(response.text)
+
+    def check_rego(self, rego):
+        # Check string for any attack
+        self.check_attack(rego)
+
+        # Check parsing format of the password
+        response = requests.post("{target}/waf/rego/{rego}".format(target=self.waf_string, rego=rego))
+
+        return self.response_handler(response.text)
+
 
 waf = WAFCaller(host_addr, waf_port)
 

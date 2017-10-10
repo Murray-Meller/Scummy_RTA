@@ -34,7 +34,6 @@ def verify_email(email=""):
 @post("/waf/password/")
 @post('/waf/password/<password:path>')
 def verify_password(password=""):
-    print(len(password))
     if len(password) < 8:
         return "Password is too short"
 
@@ -47,6 +46,17 @@ def verify_password(password=""):
     if not any(c in string.digits for c in password):
         return "Password must contain at least one digit"
 
+    return 'True'
+
+@post("/waf/rego/")
+@post('/waf/rego/<rego:path>')
+def verify_password(rego=""):
+    for c in rego:
+        if (c not in string.ascii_uppercase and c not in string.ascii_lowercase and c not in string.digits):
+            return 'Not a valid registration number'
+
+    if len(rego) != 6:
+        return "A registration number must have exactly 6 characters"
     return 'True'
 
 # Rather than using paths, you could throw all the requests with form data filled using the
