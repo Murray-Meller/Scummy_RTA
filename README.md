@@ -1,8 +1,9 @@
 # Scummy_RTA
 ## Members
 - Murray Meller
-- Dylan Harper-Harris
-- Add yourself :D
+- Dylan Harper
+- Adam Ghanem
+- Igor Chuvochin
+- Euan Smith
 
-
-5/8/17 Murray: I made some TODO: points in the python file to show you were my work stopped and where we still need to work on.
+A 2017 Semester 2 security project.

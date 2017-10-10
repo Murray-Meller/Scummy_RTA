@@ -528,8 +528,8 @@ class WAFCaller(object):
 
 waf = WAFCaller(host_addr, waf_port)
 
-print("staff: " + hash_function("Alan"))
-print("admin: " + hash_function("John"))
+#print("staff: " + hash_function("Alan"))
+#print("admin: " + hash_function("John"))
 
 fEngine = FrameEngine()
 run(host=host_addr, port=frontend_port, debug=True)
