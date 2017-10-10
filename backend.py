@@ -120,9 +120,8 @@ def session_id_new(username):
 	if not user_exists:
 		return "Not a user False"
 	global session_ids
-	id = ''.join(random.SystemRandom().choice(string.ascii_lowercase + string.digits) for i in range(12))
+	id = ''.join(random.SystemRandom().choice(string.ascii_lowercase + string.digits) for i in range(64))
 	session_ids.append([username, id, person_type])
-	print (session_ids)
 	return id
 
 @post('/api/session_id/get/<username:path>/<session_id:path>')
@@ -137,7 +136,6 @@ def session_id_remove(username, session_id):
 	for user in session_ids:
 		if user[0] == username and user[1] == session_id:
 			session_ids.remove(user)
-	print(session_ids)
 
 @post('/api/useradd/<username:path>/<password:path>/<persontype:path>')
 def useradd(username, password, persontype):

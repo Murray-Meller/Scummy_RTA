@@ -71,7 +71,6 @@ def check_user_type(username, said_type):
     for user in users:
         if user[1] == username:
             if user[3] == said_type:
-                print("Found user match. Has type: " + user[3])
                 return True
     return False
 
@@ -292,8 +291,10 @@ def user_register():
         return fEngine.load_and_render("invalid", reason=reply)
 
     if (register_a_person(username, password, "User")):
+        session_id = requests.post("{target}/api/session_id/new/{username}"
+            .format(target=backend_str, username=username)).text
         response.set_cookie('current_user', username)
-        response.set_cookie('current_user_type', "User")
+        response.set_cookie('current_user_type', session_id)
         redirect("/user_profile")
     return fEngine.load_and_render("invalid", reason="This username cannot be used")
 
@@ -316,8 +317,10 @@ def employee_register():
 
     # register them anbd if it is succesful
     if (employee_type != None and register_a_person(username, password, employee_type)):
+        session_id = requests.post("{target}/api/session_id/new/{username}"
+            .format(target=backend_str, username=username)).text
         response.set_cookie('current_user', username)
-        response.set_cookie('current_user_type', employee_type)
+        response.set_cookie('current_user_type', session_id)
         redirect("/user_profile")
     return fEngine.load_and_render("employee_register", reason="Your username and password did not follow our guidlines. Please try again.")
 
@@ -431,7 +434,6 @@ def do_login():
         return fEngine.load_and_render("invalid", reason=reply)
 
     #check the user and their type match
-    print("Read in values: " + current_user + " " + session_id)
     response = requests.post("{target}/api/session_id/get/{username}/{session_id}"
         .format(target=backend_str, username=current_user, session_id=session_id))
     if (response.text == "Invalid Cookies"):
