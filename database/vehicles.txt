@@ -1,9 +1,5 @@
 USER_ID,VEHICLE_ID,FINES,DEMERITS
-0,aks536,0,1
-x,s,d,f
-,,,
-a,s,d,f
-2,0,2,0
-H,e,l,lo t,h,e,r,e,!,,,
-a,s,d,f
-A,B,C,12,3,
+0,aks536,0,0
+1,far783,200,10
+2,sim974,30,0
+3,cdo62v,5000,11
